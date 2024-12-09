@@ -1,4 +1,4 @@
-# ZFS on Root For Ubuntu 22.04 LTS
+# ZFS on Root For Ubuntu 24.04 LTS
 
 This Ansible role is my standardized ZFS on Root installation that I use as a base for all my systems.  Additional roles are applied on top of this to make the generic host a specialized Home Theater PC, Full Graphical Desktop, Kubernetes Cluster node, a headless Docker Server, etc...
 
@@ -248,9 +248,9 @@ There should be no reason to alter the configuration file `vars/main.yml` which 
 ### Prepare the Install Environment
 
 1. Boot the Ubuntu Live CD:
-    * Select option <button name="button">Try Ubuntu</button>.
+    * Select option `Try Ubuntu`.
     * Connect your system to the internet as appropriate (e.g. join your Wi-Fi network).
-    * Open a terminal within the Live CD environment - press <kbd>Ctrl</kbd> <kbd>Alt</kbd>-<kbd>T</kbd>.
+    * Open a terminal within the Live CD environment - press `Ctrl` `Alt`-`T`.
 
 2. Install and start the OpenSSH server in the Live CD environment (see helper script below):
 
