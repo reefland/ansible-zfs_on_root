@@ -42,6 +42,7 @@ ansible ALL=(ALL) NOPASSWD:ALL
 
 # Save File & Exit
 
+sudo apt update
 sudo apt install --yes openssh-server vim python3 python3-apt mdadm
 sudo swapoff -a
 
