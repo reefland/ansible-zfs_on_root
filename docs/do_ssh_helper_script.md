@@ -42,8 +42,8 @@ ansible ALL=(ALL) NOPASSWD:ALL
 
 # Save File & Exit
 
-sudo apt update
-sudo apt install --yes openssh-server vim python3 python3-apt mdadm
+sudo apt-get update
+sudo apt-get --no-install-recommends --yes install openssh-server vim python3 python3-apt mdadm
 sudo swapoff -a
 
 gsettings set org.gnome.desktop.media-handling automount false
