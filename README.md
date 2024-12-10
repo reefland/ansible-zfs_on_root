@@ -120,9 +120,34 @@ When a computer is rebooted with ZFS native encryption enabled then someone need
 
 ## How do I set it up
 
+I use a pretty simple ansible directory structure:
+
+```bash
+$ tree 
+.
+├── ansible.cfg
+├── inventory
+│   └── hosts.yml
+├── roles
+└── zfs_on_root.yml
+```
+
+The `zfs_on_root.yml` is a simple `yaml` file used to call the role, which can look like this:
+
+```yaml
+---
+- name: ZFS on Root Ubuntu Installation
+  hosts: zfs_on_root_install
+  become: true
+  gather_facts: true
+
+  roles:
+    - role: zfs_on_root
+```
+
 ### Edit your inventory document
 
-I use a `yaml` format inventory file, you will have to adjust to whatever format you use.
+My `inventory/hosts.yml` file is a `yaml` formatted inventory file, you will have to adjust to whichever format you use.  Example:
 
 ```yaml
 
@@ -329,19 +354,6 @@ ansible-playbook -i inventory.yml ./zfs_on_root.yml -l <remote_host_name>
 * [Additional Examples with Playbook Variables](docs/playbook-examples.md)
 
 After a few minutes, if all goes well you will have a reasonably decent standardized configuring to be a base system ready to be used and modified for any other specific role.
-
-The `zfs_on_root.yml` is a simple yaml file used to call the role, which can look like this:
-
-```yaml
----
-- name: ZFS on Root Ubuntu Installation
-  hosts: zfs_on_root_install
-  become: true
-  gather_facts: true
-
-  roles:
-    - role: zfs_on_root
-```
 
 The first thing I do once this Playbook completes is apply the [Customized Message of the Day](https://github.com/reefland/ansible-motd-zfs-smartd) Ansible Playbook for a login screen with a bit of bling.
 
