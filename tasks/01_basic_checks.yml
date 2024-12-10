@@ -333,7 +333,9 @@
 
     - name: Get ZFS package version
       ansible.builtin.shell: # noqa command-instead-of-shell
-        cmd: "{{ zfs_package_version_check_command }}"
+        cmd: |
+          set -o pipefail
+          {{ zfs_package_version_check_command }}
       register: zfs_package_version
       changed_when: zfs_package_version.rc == 0
       when:
