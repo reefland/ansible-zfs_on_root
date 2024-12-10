@@ -46,14 +46,14 @@ Originally based on the [OpenZFS ZFS on Root](https://openzfs.github.io/openzfs-
 
 ## Environments Tested
 
-* Ubuntu 22.04.x Live CD Boot on Bare Metal or within VirtualBox
+* Ubuntu 24.04.x Live CD Boot on Bare Metal or within VirtualBox
 
 ---
 
 ## Requirements
 
-* [Ansible](https://www.ansible.com/) (Built with Ansible Core 2.12 or newer)
-* [Ubuntu 22.04.x "Jammy" Live CD](https://ubuntu.com/download/desktop/) (22.04 LTS Desktop - DO NOT use server images)
+* [Ansible](https://www.ansible.com/) (Built with Ansible Core 2.18 or newer)
+* [Ubuntu 24.04.x "Noble Numbat" Live CD](https://ubuntu.com/download/desktop/) (24.04 LTS Desktop - DO NOT use server images)
   * _NOTE: you can configure for command-line only server build even when using the desktop image._
 * Computers that have less than 2 GiB of memory run ZFS slowly. 4 GiB of memory is recommended for normal performance in basic workloads.
 
