@@ -1,12 +1,12 @@
 ---
-# This configuration is designed to Ubuntu 22.04, it is not backward compatible to older versions.
+# This configuration is designed for Ubuntu 24.04, it is not backward compatible to older versions.
 
 ####### Nothing Below Here Needs to be Edited ############
 
 # Ubuntu Release name
-ubuntu_release: "jammy"
+ubuntu_release: "noble"
 distro_name: "ubuntu"
-ubuntu_version: "22.04"
+ubuntu_version: "24.04"
 
 # Define Partition Mapping
 boot_partition: "1"
@@ -159,3 +159,11 @@ lsblk_device_command: "lsblk -ndo name,mountpoint,ro --include {{ lsblk_device_t
 
 # This version shows a little more information during manual install selection
 lsblk_device_detail_command: "lsblk -ndo name,size,mountpoint,ro --include {{ lsblk_device_types }} | awk '/0$/{printf \"%-8s %8s\\n\", $1,$2}'"
+
+# ZFS Version Checks on LiveCD
+# Get version of installed zfs package, expected return value like "2.2.2-0ubuntu9.1"
+zfs_package_version_check_command: "dpkg -s zfsutils-linux | grep -F Version | cut -d' ' -f2"
+# Get version of zfs kernel module, expect return value like: "2.2.2-0ubuntu9"
+zfs_package_kernel_version_check_command: "cat /sys/module/zfs/version"
+# Expected location of zfs binary on Live CD
+zfs_package_binary_path: "/usr/sbin/zfs"

@@ -317,3 +317,46 @@
   tags:
     - always
     - apply_apt_proxy
+
+###############################################################################
+# [ ZFS LIVE CD Check]#########################################################
+# Make sure ZFS is currently installed and report ZFS version detected
+
+- name: Detect ZFS Version Installed on Live CD
+  tags:
+    - always
+  block:
+    - name: Confirm ZFS binary is available
+      ansible.builtin.stat:
+        path: "{{ zfs_package_binary_path }}"
+      register: zfs_binary_path_check
+
+    - name: Get ZFS package version
+      ansible.builtin.shell: # noqa command-instead-of-shell
+        cmd: "{{ zfs_package_version_check_command }}"
+      register: zfs_package_version
+      changed_when: zfs_package_version.rc == 0
+      when:
+        - zfs_binary_path_check.stat.isreg is defined and zfs_binary_path_check.stat.isreg
+
+    - name: Probe ZFS Module
+      ansible.builtin.command:
+        cmd: "modprobe zfs"
+      register: cmd_output
+      changed_when: cmd_output.rc == 0
+      when:
+        - zfs_binary_path_check.stat.isreg is defined and zfs_binary_path_check.stat.isreg
+
+    - name: Get ZFS Kernel Module version
+      ansible.builtin.command:
+        cmd: "{{ zfs_package_kernel_version_check_command }}"
+      register: zfs_module_version
+      changed_when: zfs_module_version.rc == 0
+      when:
+        - zfs_binary_path_check.stat.isreg is defined and zfs_binary_path_check.stat.isreg
+
+    - name: Display ZFS Versions Detected
+      ansible.builtin.debug:
+        msg: "ZFS Package {{ zfs_package_version.stdout }}, ZFS Module {{ zfs_module_version.stdout }}"
+      when:
+        debug | default(false)
