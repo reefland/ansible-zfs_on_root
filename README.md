@@ -257,6 +257,7 @@ regular_user_accounts:
 * Review [Computer Configuration Settings](docs/computer-config-settings.md)
 * Review [SWAP Partition Settings](docs/swap-partition-settings.md)
 * Review [Root Pool & Partition Settings](docs/root-partition-settings.md)
+* Review [Customize ZFS Datasets to Create](docs/zfs-datasets-to-create.md)
 * Review [ZFS Native Encryption Settings](docs/zfs-encryption-settings.md)
 * Review [Custom SSHD Configuration Settings](docs/custom-sshd-settings.md)
 * Review [DropBear Settings](docs/dropbear-settings.md)
