@@ -1,5 +1,12 @@
 network:
   version: 2
+  renderer: networkd
   ethernets:
     {{nic_name.stdout}}:
       dhcp4: true
+      # dhcp6: true
+      wakeonlan: true
+      # set-name: {{nic_name.stdout}}
+      # match:
+      #   macaddress: {{ nic_mac_address.stdout }}
+      #   name: e*

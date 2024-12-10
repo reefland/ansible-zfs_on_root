@@ -20,7 +20,7 @@
         label: "{{ item }}.j2"
 
     # Update Netplan Network file - not tested on multiple adapters, might break
-    - name: Get Network adapter name on Ubuntu
+    - name: Get Network Adapter Name on Ubuntu
       ansible.builtin.shell: |
         set -o pipefail
         nmcli device status | grep 'ethernet' | grep 'connected' | cut -d' ' -f1
@@ -31,6 +31,20 @@
     - name: Debug Show Network Adapter Name Detected
       ansible.builtin.debug:
         msg: "{{ nic_name.stdout }}"
+      when:
+        - debug|default(false)
+
+    - name: Get Network Adapter MAC Address
+      ansible.builtin.shell: |
+        set -o pipefail
+        nmcli dev show {{ nic_name.stdout }} | grep 'HWADDR' | awk '{print $2}'
+      changed_when: nic_mac_address.rc == 0
+      register:
+        nic_mac_address
+
+    - name: Debug Show Network Adapter MAC Address
+      ansible.builtin.debug:
+        msg: "{{ nic_mac_address.stout }}"
       when:
         - debug|default(false)
 
