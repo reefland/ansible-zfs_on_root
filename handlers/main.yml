@@ -18,3 +18,9 @@
   with_items: "{{ accounts.results }}"
   loop_control:
     label: "{{ item.item.user_id }}"
+
+- name: Restart SSHD Server
+  ansible.builtin.service:
+    name: sshd
+    state: restarted
+  when: update_sshd.changed
