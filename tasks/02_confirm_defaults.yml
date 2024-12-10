@@ -43,7 +43,11 @@
                      Time Zone: {{ timezone_value }}
 
         Disk Devices Specified: {{ disk_by_id | length }}
-            ZFS Root Pool Name: {{ root_pool_name }}  {% if disk_by_id | length | int > 1 %}Type: {{ root_pool_type }}{% if (root_pool_type == "mirror") and (disk_by_id | length | int > 3) %} of {{ (disk_by_id | length | int / 2) | int }} mirrored vdevs{% endif %}{% else %}          Type: Single Device{% endif %}
+            ZFS Root Pool Name: {{ root_pool_name
+              }}  {% if disk_by_id | length | int > 1 %}Type: {{ root_pool_type
+              }}{% if (root_pool_type == "mirror") and (disk_by_id | length | int > 3) %} of {{
+              (disk_by_id | length | int / 2) | int
+              }} mirrored vdevs{% endif %}{% else %}          Type: Single Device{% endif %}
 
       {% if root_partition_size | regex_search('[0-9]+') == "0" %}
                 Root Pool Size: Maximum Size Possible

@@ -100,7 +100,8 @@
       ansible.builtin.lineinfile:
         path: "/etc/cmdline.d/dracut-network.conf"
         regexp: '(^.*ip=.*$)'
-        line: 'ip={{ apply_dropbear_settings.remoteaccess_ip }}:::{{ apply_dropbear_settings.remoteaccess_netmask }}:::none rd.neednet=0 rd.break'
+        line: 'ip={{ apply_dropbear_settings.remoteaccess_ip }}:::{{
+          apply_dropbear_settings.remoteaccess_netmask }}:::none rd.neednet=0 rd.break'
         create: true
         mode: "0644"
         state: present

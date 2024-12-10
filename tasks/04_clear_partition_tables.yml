@@ -16,7 +16,9 @@
     - name: Unmount any mdadm disks that might have been automounted and Stop all found mdadm arrays
       ansible.builtin.shell: |
         find /dev -iname md* -type b -exec bash -c \
-        "umount {} > /dev/null 2>&1 ; mdadm --stop --force {} > /dev/null 2>&1 ; mdadm --remove {} > /dev/null 2>&1" \;
+        "umount {} > /dev/null 2>&1 ;
+        mdadm --stop --force {} > /dev/null 2>&1 ;
+        mdadm --remove {} > /dev/null 2>&1" \;
       register: cmd_output
       changed_when:
         cmd_output.rc == 0

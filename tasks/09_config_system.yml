@@ -40,7 +40,7 @@
         dest: "{{ live_cd_mountpoint }}/etc/netplan/01-netcfg.yaml"
         owner: root
         group: root
-        mode: '0644'
+        mode: '0600'
 
     # Update sources.list file on Ubuntu
     - name: Copy sources.list template to /mnt/etc/apt/sources.list
@@ -108,6 +108,7 @@
       with_items:
         - "locale-gen --purge en_US.UTF-8 {{ locale_prefix }}"
         - "update-locale LANG={{ locale_prefix }}"
-        - "dpkg-reconfigure --frontend noninteractive locales tzdata keyboard-configuration console-setup"
+        - "dpkg-reconfigure --frontend noninteractive locales tzdata keyboard-configuration
+          console-setup"
 
 ###############################################################################

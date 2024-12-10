@@ -9,7 +9,8 @@
 
     - name: Run chroot command add ansible user account (password disabled)
       ansible.builtin.command:
-        "{{ chroot_cmd }} bash -c 'adduser {{ ansible_user }} --disabled-password --gecos Ansible_User'"
+        "{{ chroot_cmd }} bash -c
+        'adduser {{ ansible_user }} --disabled-password --gecos Ansible_User'"
       args:
         creates: "{{ live_cd_mountpoint }}/home/{{ ansible_user }}"
 
@@ -51,15 +52,16 @@
       register: cmd_output
       changed_when: cmd_output.rc == 0
       with_items:
-        - "[ -d /proc/acpi ] && apt-get -qq --yes install acpi acpid && systemctl enable acpid && systemctl stop acpid"
+        - "[ -d /proc/acpi ] && apt-get -qq --yes install acpi acpid &&
+          systemctl enable acpid && systemctl stop acpid"
 
     - name: Add nicer PS1 USER prompt
       ansible.builtin.lineinfile:
         path: "{{ item }}"
         line: >
           PS1="${debian_chroot:+($debian_chroot)}\[\$(tput setaf 2)\]\u@\[\$(tput bold)\]\[\$(tput
-          setaf 5)\]\h\[\$(tput sgr0)\]\[\$(tput setaf 7)\]:\[\$(tput bold)\]\[\$(tput setaf 4)\]\w\[\$(tput
-          setaf 7)\]\\$ \[\$(tput sgr0)\]"
+          setaf 5)\]\h\[\$(tput sgr0)\]\[\$(tput setaf 7)\]:\[\$(tput bold)\]\[\$(tput
+          setaf 4)\]\w\[\$(tput setaf 7)\]\\$ \[\$(tput sgr0)\]"
         state: present
         backup: true
       with_items:
@@ -85,7 +87,8 @@
       with_items:
         - "echo '{{ passphrase }}' > /etc/zfs/zroot.key"
         - "chmod 000 /etc/zfs/zroot.key"
-        - "zfs change-key -o keylocation=file:///etc/zfs/zroot.key -o keyformat=passphrase {{ root_pool_name }}/ROOT"
+        - "zfs change-key -o keylocation=file:///etc/zfs/zroot.key
+          -o keyformat=passphrase {{ root_pool_name }}/ROOT"
       when:
         - root_pool_encryption | default(false) | bool
 
@@ -106,9 +109,9 @@
       register: cmd_output
       changed_when: cmd_output.rc == 0
       with_items:
-        - "dracut -v -f --regenerate-all"
-        # generate-zbm only there if we built from scratch, not using downloaded image
-        - "[ -e /usr/bin/generate-zbm ] && generate-zbm --debug || true"
+        - "dracut -f --regenerate-all"
+        - "sleep 2"
+        - "generate-zbm --debug"
 
     - name: Allow read-only ZFS commands with no sudo password
       ansible.builtin.shell: # noqa command-instead-of-shell
@@ -135,6 +138,7 @@
 
     - name: Run chroot command to enable mount on default/root dataset
       ansible.builtin.command:
-        cmd: "{{ chroot_cmd }} bash -c 'zfs set canmount=on {{ root_pool_dataset_path }} && sleep 1'"
+        cmd: "{{ chroot_cmd }} bash -c
+          'zfs set canmount=on {{ root_pool_dataset_path }} && sleep 1'"
       register: cmd_output
       changed_when: cmd_output.rc == 0

@@ -22,7 +22,9 @@
     - name: Unmount any mdadm disks that might have been automounted and Stop all found mdadm arrays
       ansible.builtin.shell: >
         find /dev -iname md* -type b -exec bash -c
-        "umount {} > /dev/null 2>&1 ; mdadm --stop --force {} > /dev/null 2>&1 ; mdadm --remove {} > /dev/null 2>&1" \;
+        "umount {} > /dev/null 2>&1 ;
+        mdadm --stop --force {} > /dev/null 2>&1 ;
+        mdadm --remove {} > /dev/null 2>&1" \;
       register: cmd_output
       changed_when:
         cmd_output.rc == 0
@@ -126,7 +128,8 @@
       ansible.builtin.shell:
         cmd: >
           echo /dev/disk/by-uuid/$(blkid -s UUID -o value "{{ boot_dev_name }}")
-          /boot/efi vfat nofail,x-systemd.device-timeout=1,x-systemd.after=zfs-mount.service 0 1 >>"{{ live_cd_mountpoint }}/etc/fstab"
+          /boot/efi vfat nofail,x-systemd.device-timeout=1,x-systemd.after=zfs-mount.service 0 1
+          >>"{{ live_cd_mountpoint }}/etc/fstab"
       register: cmd_output
       changed_when: cmd_output.rc == 0
 

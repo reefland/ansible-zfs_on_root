@@ -4,13 +4,13 @@
 #
 # Usage: --extra-vars='{"disk_devices": [sda, sdb], host_name: "mynewpc", passphrase: "mys3cret"}
 #
-# The "disk_devices" specifies the devices to erase all partitions from and install ZFS filesystem on.
+# The "disk_devices" specifies the devices to erase all partitions from and install ZFS filesystem.
 # The simple "sda" style references will be converted to "disk_by_id" references.
 #
 # If the required "disk_devices", or "host_name" is not specified, you will be prompted to enter it.
-######################################################################################################
+####################################################################################################
 
-# [ Load up the secret files ]#####################################################################
+# [ Load up the secret files ]######################################################################
 - name: Include Secret Files
   ansible.builtin.include_vars: "{{ item }}"
   tags: ["always"]

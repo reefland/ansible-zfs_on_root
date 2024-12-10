@@ -16,7 +16,8 @@
       changed_when: cmd_output.rc == 0
       with_items:
         - "mkswap -f {{ disk_by_id[0] }}-part2"
-        - "echo /dev/disk/by-uuid/$(blkid -s UUID -o value {{ disk_by_id[0] }}-part2) none swap discard 0 0 >> /etc/fstab"
+        - "echo /dev/disk/by-uuid/$(blkid -s UUID -o value {{ disk_by_id[0]
+          }}-part2) none swap discard 0 0 >> /etc/fstab"
 
     - name: Run chroot command to enable Unencrypted swap
       ansible.builtin.command:
@@ -66,8 +67,8 @@
     - name: Run chroot command to create mdadm device for multi-disk swap
       ansible.builtin.command: >
         {{ chroot_cmd }} bash -c 'mdadm --create --verbose /dev/md0 -R --metadata=1.2
-        --level={{ mdadm_type }} --raid-devices={{ disk_by_id | length | int }} {{ mdadm_swap_device_list }}
-        --homehost={{ inventory_hostname_short }}'
+        --level={{ mdadm_type }} --raid-devices={{ disk_by_id | length | int }}
+        {{ mdadm_swap_device_list }} --homehost={{ inventory_hostname_short }}'
       register: cmd_output
       changed_when: cmd_output.rc == 0
 
@@ -89,7 +90,8 @@
       changed_when: cmd_output.rc == 0
       with_items:
         - "mkswap -f /dev/md0"
-        - "echo /dev/disk/by-uuid/$(blkid -s UUID -o value /dev/md0) none swap discard 0 0 >> /etc/fstab"
+        - "echo /dev/disk/by-uuid/$(blkid -s UUID -o value /dev/md0) none swap discard 0 0
+          >> /etc/fstab"
 
 ###############################################################################
 # [ Single or Multi Disk Encrypted Swap Configuration ]########################
@@ -111,9 +113,11 @@
         - ansible_os_family == "Debian"
 
     # Work for Encrypted Single Disk SWAP
-    - name: Run chroot command to add single disk encrypted swap partitions to /etc/crypttab
+    - name: Run chroot command to add single encrypted swap partition to /etc/crypttab
       ansible.builtin.shell:
-        cmd: "{{ chroot_cmd }} bash -c 'echo swap {{ disk_by_id[0] }}-part2 /dev/urandom swap,cipher=aes-xts-plain64:sha256,size=512 >> /etc/crypttab'"
+        cmd: "{{ chroot_cmd }} bash -c
+          'echo swap {{ disk_by_id[0] }}-part2 /dev/urandom
+          swap,cipher=aes-xts-plain64:sha256,size=512 >> /etc/crypttab'"
       register: cmd_output
       changed_when: cmd_output.rc == 0
       when:
@@ -122,7 +126,9 @@
     # Work for Multi Disk Encrypted SWAP
     - name: Run chroot commands to add multi-disk encrypted swap partitions to /etc/crypttab
       ansible.builtin.shell:
-        cmd: "{{ chroot_cmd }} bash -c 'echo swap /dev/md0 /dev/urandom swap,cipher=aes-xts-plain64:sha256,size=512 >> /etc/crypttab'"
+        cmd: "{{ chroot_cmd }} bash -c
+          'echo swap /dev/md0 /dev/urandom
+          swap,cipher=aes-xts-plain64:sha256,size=512 >> /etc/crypttab'"
       register: cmd_output
       changed_when: cmd_output.rc == 0
       when:

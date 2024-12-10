@@ -82,7 +82,8 @@ msmtp:
   enabled: true
   msmtp_domain: "gmail.com"
   # Default email alias name to sent alerts to (required)
-  msmtp_alias_default: "{{ secret_msmpt_send_to_email | default('not defined within vars/secrets/main.yml') }}"
+  msmtp_alias_default: "{{ secret_msmpt_send_to_email |
+    default('not defined within vars/secrets/main.yml') }}"
   # Optional Email alias address to redirect "root" emails to
   # msmtp_alias_root: "other.account.for.root@gmail.com"
   # Optional Email alias address to redirect "cron" emails to
@@ -94,9 +95,12 @@ msmtp:
       host: "smtp.gmail.com"
       port: "587"
       auth: "on"
-      from: "{{ secret_msmtp_send_from_email | default('not defined within vars/secrets/main.yml') }}"
-      user: "{{ secret_msmtp_auth_user | default('not defined within vars/secrets/main.yml') }}"
-      password: "{{ secret_msmtp_auth_password | default('not defined within vars/secrets/main.yml') }}"
+      from: "{{ secret_msmtp_send_from_email |
+        default('not defined within vars/secrets/main.yml') }}"
+      user: "{{ secret_msmtp_auth_user |
+        default('not defined within vars/secrets/main.yml') }}"
+      password: "{{ secret_msmtp_auth_password |
+        default('not defined within vars/secrets/main.yml') }}"
 
 ###############################################################################
 # Swap Partition Settings
@@ -108,7 +112,7 @@ enable_swap_partitions: false
 single_or_mirror_swap_partition_size_mb: "4096"
 
 # Swap partition size, per device, when three or more devices are used.
-# Estimated size in MB is:  #devices-1 * size_MB
+# Estimated size in MB is:  (num_devices-1) * (size_mb)
 raidz_swap_partition_size_mb: "1024"
 
 ###############################################################################

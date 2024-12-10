@@ -13,7 +13,8 @@
       changed_when: cmd_output.rc == 0
       with_items:
         - "DEBIAN_FRONTEND=noninteractive apt-get --yes install kexec-tools"
-        - "apt-get --yes install libconfig-inifiles-perl libsort-versions-perl libboolean-perl libyaml-pp-perl fzf mbuffer make curl"
+        - "apt-get --yes install libconfig-inifiles-perl libsort-versions-perl
+          libboolean-perl libyaml-pp-perl fzf mbuffer make curl"
       when:
         - ansible_os_family == "Debian"
 
@@ -38,8 +39,10 @@
       changed_when: cmd_output.rc == 0
       with_items:
         - "rm -rf /tmp/zfsbootmenu && mkdir -p /tmp/zfsbootmenu"
-        - "cd /tmp/zfsbootmenu && curl -L https://get.zfsbootmenu.org/source | tar xz --strip=1 && make install"
-        # This seems to fail sometimes - gets killed during install (use libyaml-pp-perl package instead)
+        - "cd /tmp/zfsbootmenu && curl -L https://get.zfsbootmenu.org/source |
+          tar xz --strip=1 && make install"
+        # This seems to fail sometimes - gets killed during install
+        # (use libyaml-pp-perl package instead)
         # - "cd /tmp/zfsbootmenu && PERL_MM_USE_DEFAULT=1 cpan 'YAML::PP'"
         # Create pre and post hooks dirs and syslinux snippets dir
         - "mkdir -p /etc/zfsbootmenu/generate-zbm.pre.d"
@@ -57,10 +60,14 @@
         regexp: '{{ find_values.regexp }}'
         replace: '{{ find_values.replace }}'
       loop:
-        - { regexp: '^SYSLINUX_ROOT.*', replace: 'SYSLINUX_ROOT="{{ efi_boot_mountpoint }}"' }
-        - { regexp: '^KERNEL_PATH.*', replace: 'KERNEL_PATH="EFI/zfsbootmenu"' }
-        - { regexp: '^SYSLINUX_CONFD.*', replace: 'SYSLINUX_CONFD="{{ efi_boot_mountpoint }}/snippets"' }
-        - { regexp: '^cp .*', replace: 'cp "${SYSLINUX_CFG}" "${SYSLINUX_ROOT}/syslinux/syslinux.cfg"' }
+        - { regexp: '^SYSLINUX_ROOT.*',
+            replace: 'SYSLINUX_ROOT="{{ efi_boot_mountpoint }}"' }
+        - { regexp: '^KERNEL_PATH.*',
+            replace: 'KERNEL_PATH="EFI/zfsbootmenu"' }
+        - { regexp: '^SYSLINUX_CONFD.*',
+            replace: 'SYSLINUX_CONFD="{{ efi_boot_mountpoint }}/snippets"' }
+        - { regexp: '^cp .*',
+            replace: 'cp "${SYSLINUX_CFG}" "${SYSLINUX_ROOT}/syslinux/syslinux.cfg"' }
       loop_control:
         loop_var: find_values
 
@@ -92,19 +99,23 @@
       with_items:
         - "rm -rf /tmp/memtest86 && mkdir -p /tmp/memtest86/mnt"
         - "mkdir -p {{ efi_boot_path }}/tools/memtest86"
-        - "curl -L https://www.memtest86.com/downloads/memtest86-usb.zip -o /tmp/memtest86/memtest86-usb.zip"
-        - "curl -L https://www.memtest86.com/downloads/memtest86-4.3.7-iso.zip -o /tmp/memtest86/memtest86-iso.zip"
+        - "curl -L https://www.memtest86.com/downloads/memtest86-usb.zip
+          -o /tmp/memtest86/memtest86-usb.zip"
+        - "curl -L https://www.memtest86.com/downloads/memtest86-4.3.7-iso.zip
+          -o /tmp/memtest86/memtest86-iso.zip"
         # For EFI
         - "unzip -d /tmp/memtest86 /tmp/memtest86/memtest86-usb.zip memtest86-usb.img"
         - "losetup -P /dev/loop33 /tmp/memtest86/memtest86-usb.img"
         - "mount -o loop /dev/loop33p1 /tmp/memtest86/mnt"
-        - "cp /tmp/memtest86/mnt/EFI/BOOT/BOOTX64.efi {{ efi_boot_path }}/tools/memtest86/memtest86.efi"
+        - "cp /tmp/memtest86/mnt/EFI/BOOT/BOOTX64.efi {{ efi_boot_path
+          }}/tools/memtest86/memtest86.efi"
         - "umount /tmp/memtest86/mnt"
         - "losetup -d /dev/loop33"
         # For Syslinux
         - "unzip -d /tmp/memtest86 /tmp/memtest86/memtest86-iso.zip Memtest86-4.3.7.iso"
         - "mount -o loop /tmp/memtest86/Memtest86-4.3.7.iso /tmp/memtest86/mnt"
-        - "cp /tmp/memtest86/mnt/isolinux/memtest {{ efi_boot_path }}/tools/memtest86/memtest86.syslinux"
+        - "cp /tmp/memtest86/mnt/isolinux/memtest {{ efi_boot_path
+          }}/tools/memtest86/memtest86.syslinux"
         - "umount /tmp/memtest86/mnt"
 
     # Syslinux entry for memtest86+

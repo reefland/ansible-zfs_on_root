@@ -28,7 +28,8 @@
       ansible.builtin.shell: |
         set -o pipefail
         cd /tmp/dracut-crypt-ssh
-        curl -L https://github.com/dracut-crypt-ssh/dracut-crypt-ssh/tarball/master | tar xz --strip=1
+        curl -L https://github.com/dracut-crypt-ssh/dracut-crypt-ssh/tarball/master | \
+        tar xz --strip=1
       register: cmd_output
       changed_when: cmd_output.rc == 0
 
@@ -95,7 +96,8 @@
       ansible.builtin.lineinfile:
         path: "/etc/cmdline.d/dracut-network.conf"
         regexp: '(^.*ip=.*$)'
-        line: 'ip={{ apply_dropbear_settings.remoteaccess_ip }}:::{{ apply_dropbear_settings.remoteaccess_netmask }}:::none rd.neednet=1 rd.break'
+        line: 'ip={{ apply_dropbear_settings.remoteaccess_ip }}:::{{
+          apply_dropbear_settings.remoteaccess_netmask }}:::none rd.neednet=1 rd.break'
         create: true
         mode: "0644"
         state: present
