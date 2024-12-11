@@ -56,16 +56,41 @@
         group: root
         mode: '0600'
 
-    # Update sources.list file on Ubuntu
-    - name: Copy sources.list template to /mnt/etc/apt/sources.list
+    - name: Debug Show Distro Release
+      ansible.builtin.debug:
+        msg: "{{ ansible_distribution_release }}"
+
+    # OLD: Update sources.list file on Ubuntu bionic
+    - name: Copy sources templates to chroot /mnt
       ansible.builtin.template:
-        src: sources.list.j2
-        dest: "{{ live_cd_mountpoint }}/etc/apt/sources.list"
+        src: "{{ copy_file.file_name }}.j2"
+        dest: "{{ live_cd_mountpoint }}{{ copy_file.file_destination }}"
+        owner: root
+        group: root
+        mode: '0644'
+      loop:
+        - { file_name: "sources.list", file_destination: "/etc/apt/sources.list" }
+        - { file_name: "ubuntu_universe.list", file_destination: "/etc/apt/sources.list.d/ubuntu_universe.list"}
+      loop_control:
+        loop_var: copy_file
+        label: "{{ copy_file.file_name }}"
+      when:
+        - ansible_distribution == 'Ubuntu'
+        - ansible_distribution_release == 'bionic'
+
+    # Update ubuntu.sources file on modern Ubuntu releases
+    - name: Copy ubuntu.sources template to /mnt/etc/apt/sources.list.d/ubuntu.sources
+      ansible.builtin.template:
+        src: ubuntu.sources.j2
+        dest: "{{ live_cd_mountpoint }}/etc/apt/sources.list.d/ubuntu.sources"
         owner: root
         group: root
         mode: '0644'
       when:
         - ansible_distribution == 'Ubuntu'
+        - ansible_distribution_release == 'focal' or
+          ansible_distribution_release == 'jammy' or
+          ansible_distribution_release == 'noble'
 
 ###############################################################################
 # [ Start chroot Environment ]#################################################
