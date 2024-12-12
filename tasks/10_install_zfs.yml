@@ -8,6 +8,42 @@
   tags:
     - install_zfs
   block:
+
+    ###############################################################################
+    # [ Apply APT-Cacher-NG Configuration ]########################################
+    # If an APT caching proxy server is available set this up early to reduce
+    # bandwidth requirements when downloading packages to install. This task will
+    # create file: /mnt/etc/apt/apt.conf.d/01proxy
+
+    - name: Apply Apt-Cacher-NG Configuration Update
+      ansible.builtin.template:
+        src: "apt_01proxy.j2"
+        dest: "{{ live_cd_mountpoint }}/etc/apt/apt.conf.d/01proxy"
+        owner: "root"
+        group: "root"
+        mode: "0644"
+      when:
+        - apt_http_proxy is defined or
+          apt_https_proxy is defined
+
+    - name: Run chroot command for apt update
+      ansible.builtin.command:
+        cmd: "{{ chroot_cmd }} bash -c 'apt-get -qq update'"
+      register: cmd_output
+      changed_when: cmd_output.rc == 0
+
+    - name: Configure chroot Environment for ZFS installs
+      ansible.builtin.command:
+        cmd: "{{ chroot_cmd }} bash -c '{{ item }}'"
+      register: cmd_output
+      changed_when: cmd_output.rc == 0
+      with_items:
+        - "apt-get install --yes --no-install-recommends software-properties-common debconf-utils"
+        - "locale-gen --purge en_US.UTF-8 {{ locale_prefix }}"
+        - "update-locale LANG={{ locale_prefix }}"
+        - "dpkg-reconfigure --frontend noninteractive locales tzdata keyboard-configuration
+          console-setup"
+
     - name: Run chroot command for apt update
       ansible.builtin.command:
         cmd: "{{ chroot_cmd }} bash -c 'apt-get -qq update'"
@@ -22,9 +58,6 @@
       register: cmd_output
       changed_when: cmd_output.rc == 0
       with_items:
-        - "apt-get install --yes --no-install-recommends software-properties-common"
-        - "apt-add-repository --yes universe"
-        - "apt-get install --yes --no-install-recommends debconf-utils"
         - "apt-get install --yes --no-install-recommends
           {{ enable_ubuntu_lts_hwe | ternary('linux-generic-hwe-' + ubuntu_version + ' linux-headers-generic-hwe-'
           + ubuntu_version + ' linux-image-generic-hwe-' + ubuntu_version, 'linux-generic linux-headers-generic linux-image-generic') }}"
