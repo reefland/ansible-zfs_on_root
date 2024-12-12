@@ -1,0 +1,55 @@
+---
+# [ Install Dracut to Load ZFS ]###############################################
+- name: Install Dracut to Load ZFS Block
+  when:
+    - ansible_nodename != "localhost"
+  tags:
+    - config_dracut_network
+  block:
+    # [ Setup Dracut Networking without Dropbear ]#############################
+
+    - name: Configure Dracut Network without Dropbear
+      ansible.builtin.lineinfile:
+        path: "{{ live_cd_mountpoint }}/etc/zfsbootmenu/dracut.conf.d/network.conf"
+        line: 'install_items+=" /etc/cmdline.d/dracut-network.conf "'
+        create: true
+        mode: "0644"
+        state: present
+        backup: true
+      when:
+        - not enable_dropbear_support | default(false) | bool
+
+    # With rd.neednet=1 it will fail to boot if no network available
+    # This can be a problem with laptops and docking stations, if the dock
+    # is not connected (no ethernet) it can fail to boot. Setting to 1 really
+    # only needed with for Dropbear support
+    - name: Create file /etc/cmdline.d/dracut-network.conf for DHCP
+      ansible.builtin.lineinfile:
+        path: "/etc/cmdline.d/dracut-network.conf"
+        regexp: '(^.*ip=.*$)'
+        line: 'ip={{ apply_dropbear_settings.remoteaccess_ip_config }} rd.neednet=0'
+        create: true
+        mode: "0644"
+        state: present
+        backup: true
+      when:
+        - not apply_dropbear_settings.remoteaccess_ip_config == "static"
+        - not enable_dropbear_support | default(false) | bool
+
+    # With rd.neednet=1 it will fail to boot if no network available
+    # This can be a problem with laptops and docking stations, if the dock
+    # is not connected (no ethernet) it can fail to boot. Setting to 1 really
+    # only needed with for Dropbear support
+    - name: Create file /etc/cmdline.d/dracut-network.conf for Static IP
+      ansible.builtin.lineinfile:
+        path: "/etc/cmdline.d/dracut-network.conf"
+        regexp: '(^.*ip=.*$)'
+        line: 'ip={{ apply_dropbear_settings.remoteaccess_ip }}:::{{
+          apply_dropbear_settings.remoteaccess_netmask }}:::none rd.neednet=0 rd.break'
+        create: true
+        mode: "0644"
+        state: present
+        backup: true
+      when:
+        - apply_dropbear_settings.remoteaccess_ip_config == "static"
+        - not enable_dropbear_support | default(false) | bool
