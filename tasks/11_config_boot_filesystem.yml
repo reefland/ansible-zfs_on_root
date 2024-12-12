@@ -82,14 +82,6 @@
     - config_boot_fs
   block:
 
-    - name: Run chroot command to install dosfstool
-      ansible.builtin.command:
-        cmd: "{{ chroot_cmd }} bash -c 'apt-get install --yes dosfstools'"
-      register: cmd_output
-      changed_when: cmd_output.rc == 0
-      when:
-        - ansible_os_family == "Debian"
-
     - name: Create EFI filesystem on boot device
       ansible.builtin.command:
         cmd: "mkfs.vfat -v -F 32 -s 1 -n BOOT_EFI {{ boot_dev_name }}"
@@ -127,7 +119,7 @@
     - name: Add EFI Filesystems to /etc/fstab
       ansible.builtin.shell:
         cmd: >
-          echo /dev/disk/by-uuid/$(blkid -s UUID -o value "{{ boot_dev_name }}")
+          echo UUID=$(blkid -s UUID -o value "{{ boot_dev_name }}")
           /boot/efi vfat nofail,x-systemd.device-timeout=1,x-systemd.after=zfs-mount.service 0 1
           >>"{{ live_cd_mountpoint }}/etc/fstab"
       register: cmd_output
@@ -146,12 +138,5 @@
         var: cmd_output['stdout']
       when:
         debug | default(false)
-
-    # Mount /boot/efi directory in chroot environment
-    - name: Run chroot command to mount /boot/efi directory
-      ansible.builtin.command:
-        cmd: "{{ chroot_cmd }} bash -c 'mount {{ efi_boot_mountpoint }}'"
-      register: cmd_output
-      changed_when: cmd_output.rc == 0
 
 ###############################################################################

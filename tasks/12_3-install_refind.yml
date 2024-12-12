@@ -6,6 +6,14 @@
   tags:
     - install_refind
   block:
+
+    # Mount /boot/efi directory in chroot environment
+    - name: Run chroot command to mount /boot/efi directory
+      ansible.builtin.command:
+        cmd: "{{ chroot_cmd }} bash -c 'mount {{ efi_boot_mountpoint }}'"
+      register: cmd_output
+      changed_when: cmd_output.rc == 0
+
     - name: Run chroot command to install rEFInd Boot Manager
       ansible.builtin.command:
         cmd: "{{ chroot_cmd }} bash -c '{{ item }}'"
