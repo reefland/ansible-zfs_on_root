@@ -108,9 +108,6 @@
       register: cmd_output
       changed_when: cmd_output.rc == 0
       with_items:
-#        - "mount --rbind /dev  {{ live_cd_mountpoint }}/dev"
-#        - "mount --rbind /proc {{ live_cd_mountpoint }}/proc"
-#        - "mount --rbind /sys  {{ live_cd_mountpoint }}/sys"
         - "mount -t proc /proc {{ live_cd_mountpoint }}/proc"
         - "mount -t sysfs sys  {{ live_cd_mountpoint }}/sys"
         - "mount -B /dev  {{ live_cd_mountpoint }}/dev"
