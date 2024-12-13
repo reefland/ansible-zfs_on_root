@@ -12,7 +12,7 @@
       register: cmd_output
       changed_when: cmd_output.rc == 0
       with_items:
-        - "apt-get install --yes dracut-core zfs-dracut bsdmainutils bsdextrautils gcc"
+        - "apt-get install --yes dracut-core zfs-dracut bsdmainutils gcc"
         - "apt-mark hold {{ packages_to_mark_hold | join(' ') }}"
       when:
         - ansible_os_family == "Debian"
