@@ -7,7 +7,17 @@
     - install_refind
   block:
 
-    # Mount /boot/efi directory in chroot environment
+    - name: Run chroot to mount EFI variables directory
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          EFIVARS_CNT=$(ls -1 {{ live_cd_mountpoint }}/{{ efi_firmware_vars_path }} | wc -l)
+          if [ ${EFIVARS_CNT} -eq 0 ] ; then
+            mount -t efivarfs efivarfs {{ live_cd_mountpoint }}/{{ efi_firmware_vars_path }}
+          fi
+      register: cmd_output
+      changed_when: cmd_output.rc == 0
+
     - name: Run chroot command to mount /boot/efi directory
       ansible.builtin.command:
         cmd: "{{ chroot_cmd }} bash -c 'mount {{ efi_boot_mountpoint }}'"
@@ -20,7 +30,7 @@
       register: cmd_output
       changed_when: cmd_output.rc == 0
       with_items:
-        - "DEBIAN_FRONTEND=noninteractive apt-get install --yes refind"
+        - "DEBIAN_FRONTEND=noninteractive apt-get --yes install refind efi-shell-x64"
         - "refind-install --yes"
         - "mkdir -p {{ zfs_boot_menu_path }}"
         - "mkdir -p {{ refind_path }}"
@@ -34,6 +44,13 @@
         owner: "root"
         group: "root"
         mode: "0644"
+
+    - name: Copy EUFI shell to EFI system
+      ansible.builtin.command:
+        cmd: "{{ chroot_cmd }} bash -c '[ -e /usr/share/efi-shell-x64/shellx64.efi ] &&
+          cp /usr/share/efi-shell-x64/shellx64.efi /boot/efi/EFI'"
+      register: cmd_output
+      changed_when: cmd_output.rc == 0
 
     # If we're running under legacy bios then rEFInd will be installed
     # to /boot/efi/EFI/BOOT - we want it in /boot/efi/EFI/refind
@@ -60,7 +77,7 @@
         group: "root"
         mode: "0644"
       with_items:
-        - { source: "logo.jpg", dest: "{{ refind_path }}/" }
+        - { source: "{{ refind_boot_menu_logo_filename }}", dest: "{{ refind_path }}/logo.jpg" }
         - { source: "os_linux.png", dest: "{{ refind_path }}/icons/"}
       when:
         - refind_boot_menu_logo  | default(false)
