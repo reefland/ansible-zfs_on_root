@@ -75,7 +75,7 @@ root_pool_options:
   - "-O normalization=formD"
   - "-O relatime=on"
   - "-O xattr=sa"
-  - "-O mountpoint=/ -R {{ live_cd_mountpoint }} {{ root_pool_name }}"
+  - "-O mountpoint=none -R {{ live_cd_mountpoint }} {{ root_pool_name }}"
 
 # Define Root Pool Encryption Options
 root_pool_encryption_options:
@@ -150,11 +150,13 @@ packages_to_mark_hold:
   - "grub-efi-amd64-bin"
   - "grub-common"
   - "grub2-common"
-  - "lilo"
+  # - "lilo"  # Seems not available in Ubuntu 24.04.1
 
 # Directory to check that UEFI firmware is available
 # This is required to be found if UEFI support is enabled
 efi_firmware_path: "/sys/firmware/efi"
+
+efi_firmware_vars_path: "{{ efi_firmware_path }}/efivars"
 
 # Location of sudoers include file which contains: ansible ALL=(ALL) NOPASSWD:ALL
 sudoers_include_file: "/etc/sudoers.d/99_sudo_include_file"
