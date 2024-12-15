@@ -25,8 +25,8 @@
       register: cmd_output
       changed_when: cmd_output.rc == 0
       with_items:
-        - 'zfs set org.zfsbootmenu:commandline="rw" {{ root_pool_name }}/ROOT'
-        - 'zfs set org.zfsbootmenu:commandline="rw" {{ root_pool_dataset_path }}'
+        - 'zfs set org.zfsbootmenu:commandline="rw quiet {{ zswap_config }}" {{ root_pool_name }}/ROOT'
+        - 'zfs set org.zfsbootmenu:commandline="rw quiet {{ zswap_config }}" {{ root_pool_dataset_path }}'
         - 'zfs set canmount=noauto {{ root_pool_name }}/ROOT'
         - 'zfs set canmount=noauto {{ root_pool_dataset_path }}'
 

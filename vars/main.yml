@@ -110,6 +110,11 @@ zfs_package_kernel_version_check_command: "cat /sys/module/zfs/version"
 # Expected location of zfs binary on Live CD
 zfs_package_binary_path: "/usr/sbin/zfs"
 
+# Use zswap compressed page cache in front of swap
+# https://wiki.archlinux.org/index.php/Zswap
+# Only used for swap partition (encrypted or not)
+zswap_config: "zswap.enabled=1 zswap.compressor=lz4 zswap.max_pool_percent=25"
+
 ###############################################################################
 # [ Variable below are unrelated to ZFS ]######################################
 
