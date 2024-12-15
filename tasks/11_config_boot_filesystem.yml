@@ -107,7 +107,7 @@
     - name: Remove any existing /boot/efi references from fstab
       ansible.builtin.replace:
         path: "{{ live_cd_mountpoint }}/etc/fstab"
-        regexp: '(?m)^/dev/disk/by-uuid/.*/boot/efi.*\n?'
+        regexp: '(?m)^UUID.*/boot/efi.*\n?'
         replace: ''
 
     - name: Remove UNCONFIGURED message in /etc/fstab
