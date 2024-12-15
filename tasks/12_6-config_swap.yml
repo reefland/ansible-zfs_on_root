@@ -16,8 +16,8 @@
       changed_when: cmd_output.rc == 0
       with_items:
         - "mkswap -f {{ disk_by_id[0] }}-part2"
-        - "echo /dev/disk/by-uuid/$(blkid -s UUID -o value {{ disk_by_id[0]
-          }}-part2) none swap discard 0 0 >> /etc/fstab"
+        - "echo UUID=$(blkid -s UUID -o value {{ disk_by_id[0] }}-part2)
+          none swap discard,sw 0 0 >> /etc/fstab"
 
     - name: Run chroot command to enable Unencrypted swap
       ansible.builtin.command:
@@ -90,7 +90,7 @@
       changed_when: cmd_output.rc == 0
       with_items:
         - "mkswap -f /dev/md0"
-        - "echo /dev/disk/by-uuid/$(blkid -s UUID -o value /dev/md0) none swap discard 0 0
+        - "echo UUID=$(blkid -s UUID -o value /dev/md0) none swap discard,sw 0 0
           >> /etc/fstab"
 
 ###############################################################################
@@ -136,7 +136,7 @@
 
     - name: Run chroot command to add swap device map to /etc/fstab (Single or Multi Disk)
       ansible.builtin.shell:
-        cmd: "{{ chroot_cmd }} bash -c 'echo /dev/mapper/swap none swap defaults 0 0 >> /etc/fstab'"
+        cmd: "{{ chroot_cmd }} bash -c 'echo /dev/mapper/swap none swap discard,sw 0 0 >> /etc/fstab'"
       register: cmd_output
       changed_when: cmd_output.rc == 0
 
