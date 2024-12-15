@@ -173,6 +173,16 @@ set_root_pool_type:
 # Define ZFS ashift value to use
 zfs_rpool_ashift: 12
 
+# On systems with lots of disks, enumerating them can sometimes take a long time,
+# which means the root disks may not have been enumerated before ZFS tries to
+# import the root pool. That drops you to an initramfs prompt where you have to
+# use 'zfs import -N <root_pool> ; exit'
+# This sets the same delay on:
+#  - ZFS_INITRD_POST_MODPROBE_SLEEP
+#  - ZFS_INITRD_PRE_MOUNTROOT_SLEEP
+zfs_pool_import_delay_enabled: true
+zfs_pool_import_delay_seconds: 10
+
 # Enable ZFS Pool Trim Service after creating
 # NOTE: false will create, just not enable by default.
 zfs_pool_trim_systemd_service_enable: false
