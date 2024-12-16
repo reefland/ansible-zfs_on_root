@@ -23,6 +23,8 @@
         cmd: "{{ chroot_cmd }} bash -c 'mount {{ efi_boot_mountpoint }}'"
       register: cmd_output
       changed_when: cmd_output.rc == 0
+      args:
+        creates: "{{ efi_boot_path }}"
 
     - name: Run chroot command to install rEFInd Boot Manager
       ansible.builtin.command:
@@ -46,11 +48,13 @@
         mode: "0644"
 
     - name: Copy EUFI shell to EFI system
-      ansible.builtin.command:
-        cmd: "{{ chroot_cmd }} bash -c '[ -e /usr/share/efi-shell-x64/shellx64.efi ] &&
-          cp /usr/share/efi-shell-x64/shellx64.efi /boot/efi/EFI'"
-      register: cmd_output
-      changed_when: cmd_output.rc == 0
+      ansible.builtin.copy:
+        src: "{{ live_cd_mountpoint }}/usr/share/efi-shell-x64/shellx64.efi"
+        dest: "{{ live_cd_mountpoint }}/boot/efi/EFI/shellx64.efi"
+        owner: "root"
+        group: "root"
+        mode: "0644"
+        remote_src: true
 
     # If we're running under legacy bios then rEFInd will be installed
     # to /boot/efi/EFI/BOOT - we want it in /boot/efi/EFI/refind
