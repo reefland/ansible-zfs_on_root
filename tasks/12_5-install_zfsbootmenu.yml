@@ -66,22 +66,22 @@
           -o {{ efi_boot_mountpoint }}/syslinux-update.sh'
         - 'chmod +x {{ efi_boot_mountpoint }}/syslinux-update.sh'
 
-    - name: Modify syslinux-update.sh
-      ansible.builtin.replace:
-        path: "{{ live_cd_mountpoint }}{{ efi_boot_mountpoint }}/syslinux-update.sh"
-        regexp: '{{ find_values.regexp }}'
-        replace: '{{ find_values.replace }}'
-      loop:
-        - { regexp: '^SYSLINUX_ROOT.*',
-            replace: 'SYSLINUX_ROOT="{{ efi_boot_mountpoint }}"' }
-        - { regexp: '^KERNEL_PATH.*',
-            replace: 'KERNEL_PATH="EFI/zfsbootmenu"' }
-        - { regexp: '^SYSLINUX_CONFD.*',
-            replace: 'SYSLINUX_CONFD="{{ efi_boot_mountpoint }}/snippets"' }
-        - { regexp: '^cp .*',
-            replace: 'cp "${SYSLINUX_CFG}" "${SYSLINUX_ROOT}/syslinux/syslinux.cfg"' }
-      loop_control:
-        loop_var: find_values
+    # - name: Modify syslinux-update.sh
+    #   ansible.builtin.replace:
+    #     path: "{{ live_cd_mountpoint }}{{ efi_boot_mountpoint }}/syslinux-update.sh"
+    #     regexp: '{{ find_values.regexp }}'
+    #     replace: '{{ find_values.replace }}'
+    #   loop:
+    #     - { regexp: '^SYSLINUX_ROOT.*',
+    #         replace: 'SYSLINUX_ROOT="{{ efi_boot_mountpoint }}"' }
+    #     - { regexp: '^KERNEL_PATH.*',
+    #         replace: 'KERNEL_PATH="EFI/zfsbootmenu"' }
+    #     - { regexp: '^SYSLINUX_CONFD.*',
+    #         replace: 'SYSLINUX_CONFD="{{ efi_boot_mountpoint }}/snippets"' }
+    #     - { regexp: '^cp .*',
+    #         replace: 'cp "${SYSLINUX_CFG}" "${SYSLINUX_ROOT}/syslinux/syslinux.cfg"' }
+    #   loop_control:
+    #     loop_var: find_values
 
 
     # ###########################################################################
