@@ -33,108 +33,43 @@
     ###########################################################################
     # [ Install ZFSBootMenu Package Directly ]
 
-    - name: Run chroot command to Install ZFSBootMenu EFI binary
-      ansible.builtin.command:
-        cmd: "{{ chroot_cmd }} bash -c '{{ item }}'"
-      register: cmd_output
-      changed_when: cmd_output.rc == 0
-      with_items:
-        - 'curl -L https://get.zfsbootmenu.org/efi/recovery -o {{ zfs_boot_menu_path }}/zfsbootmenu.efi'
-      when:
-        - efi_firmware_directory.stat.isdir is defined and efi_firmware_directory.stat.isdir
+    - name: Fetch ZFSBootMenu KERNEL bundle
+      ansible.builtin.get_url:
+        url: "{{ zfs_boot_menu_repo_url }}/releases/download/{{ zfs_boot_menu_version }}/zfsbootmenu-recovery-x86_64-{{ zfs_boot_menu_version }}.tar.gz"
+        dest: "{{ live_cd_mountpoint }}/tmp/zfsbootmenu.tar.gz"
+        mode: "440"
 
-    - name: Run chroot command to Install ZFSBootMenu KERNEL files
-      ansible.builtin.command:
-        cmd: "{{ chroot_cmd }} bash -c '{{ item }}'"
-      register: cmd_output
-      changed_when: cmd_output.rc == 0
-      with_items:
-        - 'curl -L {{ zfs_boot_menu_repo_url }}/releases/download/{{ zfs_boot_menu_version }}/zfsbootmenu-recovery-x86_64-{{ zfs_boot_menu_version }}.tar.gz
-          -o /tmp/zfsbootmenu.tar.gz'
-        - tar xvzf /tmp/zfsbootmenu.tar.gz --strip-components=1 -C {{ zfs_boot_menu_path }}
-      when:
-        - efi_firmware_directory.stat.isdir is undefined
+    - name: Extract ZFSBootMenu KERNEL files
+      ansible.builtin.unarchive:
+        src: "{{ live_cd_mountpoint }}/tmp/zfsbootmenu.tar.gz"
+        dest: "{{ live_cd_mountpoint }}/{{ zfs_boot_menu_path }}"
+        remote_src: yes # noqa yaml[truthy]
+        extra_opts:
+          - --strip-components=1
+          - --no-same-owner
 
-    - name: Run chroot to fetch syslinux-update.sh script from the repo
-      # NOTE: This is in /usr/local/bin so it can be run ad-hoc to update the syslinux config
-      ansible.builtin.command:
-        cmd: "{{ chroot_cmd }} bash -c '{{ item }}'"
-      register: cmd_output
-      changed_when: cmd_output.rc == 0
-      with_items:
-        - 'curl -L https://raw.githubusercontent.com/{{ zfs_boot_menu_repo }}/master/contrib/syslinux-update.sh
-          -o {{ efi_boot_mountpoint }}/syslinux-update.sh'
-        - 'chmod +x {{ efi_boot_mountpoint }}/syslinux-update.sh'
+    - name: Fetch syslinux-update.sh script from the repo
+      ansible.builtin.get_url:
+        url: "https://raw.githubusercontent.com/{{ zfs_boot_menu_repo }}/master/contrib/syslinux-update.sh"
+        dest: "{{ live_cd_mountpoint }}/{{ efi_boot_mountpoint }}/syslinux-update.sh"
+        mode: "755"
 
-    # - name: Modify syslinux-update.sh
-    #   ansible.builtin.replace:
-    #     path: "{{ live_cd_mountpoint }}{{ efi_boot_mountpoint }}/syslinux-update.sh"
-    #     regexp: '{{ find_values.regexp }}'
-    #     replace: '{{ find_values.replace }}'
-    #   loop:
-    #     - { regexp: '^SYSLINUX_ROOT.*',
-    #         replace: 'SYSLINUX_ROOT="{{ efi_boot_mountpoint }}"' }
-    #     - { regexp: '^KERNEL_PATH.*',
-    #         replace: 'KERNEL_PATH="EFI/zfsbootmenu"' }
-    #     - { regexp: '^SYSLINUX_CONFD.*',
-    #         replace: 'SYSLINUX_CONFD="{{ efi_boot_mountpoint }}/snippets"' }
-    #     - { regexp: '^cp .*',
-    #         replace: 'cp "${SYSLINUX_CFG}" "${SYSLINUX_ROOT}/syslinux/syslinux.cfg"' }
-    #   loop_control:
-    #     loop_var: find_values
-
-
-    # ###########################################################################
-    # # [ Install ZFS Boot Menu git repo and build locally ]#####################
-    # - name: Run chroot command to Install ZFS Boot Menu git repo and build
-    #   ansible.builtin.shell: # noqa command-instead-of-shell
-    #     cmd: "{{ chroot_cmd }} bash -c '{{ item }}'"
-    #   register: cmd_output
-    #   changed_when: cmd_output.rc == 0
-    #   with_items:
-    #     - "rm -rf /tmp/zfsbootmenu && mkdir -p /tmp/zfsbootmenu"
-    #     - "curl -L https://get.zfsbootmenu.org/source |
-    #       tar xz --strip=1 --directory /tmp/zfsbootmenu"
-
-    # More stuff for LOCAL install... may not be needed.
-    #     # This seems to fail sometimes - gets killed during install
-    #     # (use libyaml-pp-perl package instead)
-    #     # - "cd /tmp/zfsbootmenu && PERL_MM_USE_DEFAULT=1 cpan 'YAML::PP'"
-    #     # Create pre and post hooks dirs and syslinux snippets dir
-    #     - "mkdir -p /etc/zfsbootmenu/generate-zbm.pre.d"
-    #     - "mkdir -p /etc/zfsbootmenu/generate-zbm.post.d"
-    #     - "mkdir -p {{ efi_boot_mountpoint }}/snippets"
-    #     # Copy syslinux-update.sh script
-    #     - "cp /tmp/zfsbootmenu/contrib/syslinux-update.sh /etc/zfsbootmenu/generate-zbm.post.d"
-    #     - "chmod +x /etc/zfsbootmenu/generate-zbm.post.d/syslinux-update.sh"
-
-    # # Modify syslinux-update.sh script to let generate-zbm create a valid
-    # # syslinux.cfg that can also include memtest86 snippet
-    # - name: Modify syslinux-update.sh
-    #   ansible.builtin.replace:
-    #     path: "{{ live_cd_mountpoint }}/etc/zfsbootmenu/generate-zbm.post.d/syslinux-update.sh"
-    #     regexp: '{{ find_values.regexp }}'
-    #     replace: '{{ find_values.replace }}'
-    #   loop:
-    #     - { regexp: '^SYSLINUX_ROOT.*',
-    #         replace: 'SYSLINUX_ROOT="{{ efi_boot_mountpoint }}"' }
-    #     - { regexp: '^KERNEL_PATH.*',
-    #         replace: 'KERNEL_PATH="EFI/zfsbootmenu"' }
-    #     - { regexp: '^SYSLINUX_CONFD.*',
-    #         replace: 'SYSLINUX_CONFD="{{ efi_boot_mountpoint }}/snippets"' }
-    #     - { regexp: '^cp .*',
-    #         replace: 'cp "${SYSLINUX_CFG}" "${SYSLINUX_ROOT}/syslinux/syslinux.cfg"' }
-    #   loop_control:
-    #     loop_var: find_values
-
-    # # Configure ZFSBootMenu
-    # - name: Copy ZFSBootMenu Config template to /mnt/etc/zfsbootmenu/config.yaml
-    #   ansible.builtin.template:
-    #     src: zfsbootmenu_config.yaml.j2
-    #     dest: "{{ live_cd_mountpoint }}/etc/zfsbootmenu/config.yaml"
-    #     owner: "root"
-    #     group: "root"
-    #     mode: "0644"
+    - name: Modify syslinux-update.sh
+      ansible.builtin.replace:
+        path: "{{ live_cd_mountpoint }}{{ efi_boot_mountpoint }}/syslinux-update.sh"
+        regexp: '{{ find_values.regexp }}'
+        replace: '{{ find_values.replace }}'
+      loop:
+        - { regexp: '^SYSLINUX_ROOT.*',
+            replace: 'SYSLINUX_ROOT="{{ efi_boot_mountpoint }}"' }
+        - { regexp: '^KERNEL_PATH.*',
+            replace: 'KERNEL_PATH="EFI/zfsbootmenu"' }
+        - { regexp: '^SYSLINUX_CONFD.*',
+            replace: 'SYSLINUX_CONFD="{{ efi_boot_mountpoint }}/snippets"' }
+        - { regexp: '^cp .*',
+            replace: 'cp "${SYSLINUX_CFG}" "${SYSLINUX_ROOT}/syslinux/syslinux.cfg"' }
+      loop_control:
+        loop_var: find_values
 
     - name: Create Syslinux snippets directory set permissions
       ansible.builtin.file:
