@@ -7,15 +7,10 @@
   tags:
     - config_boot_fs
   block:
-    # Create name of boot device
-    - name: Create name of boot device
-      ansible.builtin.set_fact:
-        boot_dev_name: "/dev/md/BOOT_EFI"
-
     # Create a list of device partitions to use
     - name: Create a list of device partitions to use
       ansible.builtin.set_fact:
-        mdadm_device_list: "{{ mdadm_device_list | default('') }} {{ item }}-part1"
+        mdadm_device_list: "{{ mdadm_device_list | default('') }} {{ item }}-part{{ boot_partition }}"
       loop:
         "{{ disk_by_id }}"
 
@@ -32,7 +27,7 @@
 
     - name: Wipe mdadm superblock from partitions
       ansible.builtin.command:
-        cmd: "mdadm --zero-superblock --force {{ item }}-part1"
+        cmd: "mdadm --zero-superblock --force {{ item }}-part{{ boot_partition }}"
       register: cmd_output
       changed_when:
         cmd_output.rc == 0
@@ -55,7 +50,6 @@
       ansible.builtin.command:
         cmd:
           mdadm --examine --scan >> {{ live_cd_mountpoint }}/etc/mdadm/mdadm.conf
-        creates: "{{ boot_dev_name }}"
       register: cmd_output
       changed_when: cmd_output.rc == 0
 
@@ -71,7 +65,7 @@
     # Create name of boot device
     - name: Create name of boot device
       ansible.builtin.set_fact:
-        boot_dev_name: "{{ disk_by_id[0] }}-part1"
+        boot_dev_name: "{{ disk_by_id[0] }}-part{{ boot_partition }}"
 
 ###############################################################################
 # [ Create Boot EFI Directory ]################################################

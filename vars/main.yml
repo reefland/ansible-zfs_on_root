@@ -124,6 +124,12 @@ live_cd_mountpoint: "/mnt"
 # Define chroot command to use
 chroot_cmd: "chroot {{ live_cd_mountpoint }}"
 
+# Name of EFI mdadm raid device to use
+boot_dev_name: "/dev/md/efi"
+
+# Name of SWAP mdadm raid device to use
+swap_dev_name: "/dev/md/swap"
+
 # EFI Boot Mountpoint
 efi_boot_mountpoint: "/boot/efi"
 

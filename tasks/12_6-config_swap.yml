@@ -15,8 +15,8 @@
       register: cmd_output
       changed_when: cmd_output.rc == 0
       with_items:
-        - "mkswap -f {{ disk_by_id[0] }}-part2"
-        - "echo UUID=$(blkid -s UUID -o value {{ disk_by_id[0] }}-part2)
+        - "mkswap -f {{ disk_by_id[0] }}-part{{ swap_partition }}"
+        - "echo UUID=$(blkid -s UUID -o value {{ disk_by_id[0] }}-part{{ swap_partition }})
           none swap discard,sw 0 0 >> /etc/fstab"
 
     - name: Run chroot command to enable Unencrypted swap
@@ -43,10 +43,6 @@
       when:
         - ansible_os_family == "Debian"
 
-    - name: Create name of swap device
-      ansible.builtin.set_fact:
-        swap_dev_name: "/dev/md/swap"
-
     # if 2 devices use a mirror
     - name: See if mirror is to be used
       ansible.builtin.set_fact:
@@ -64,7 +60,7 @@
     # Create a list of swap device partitions to use
     - name: Create a list of swap device partitions to use
       ansible.builtin.set_fact:
-        mdadm_swap_device_list: "{{ mdadm_swap_device_list | default('') }} {{ item }}-part2"
+        mdadm_swap_device_list: "{{ mdadm_swap_device_list | default('') }} {{ item }}-part{{ swap_partition }}"
       loop:
         "{{ disk_by_id }}"
 
@@ -81,7 +77,7 @@
 
     - name: Wipe mdadm superblock from swap partitions
       ansible.builtin.command:
-        cmd: mdadm --zero-superblock --force {{ item }}-part2
+        cmd: mdadm --zero-superblock --force {{ item }}-part{{ swap_partition }}
       register: cmd_output
       changed_when:
         cmd_output.rc == 0
@@ -104,7 +100,6 @@
       ansible.builtin.command:
         cmd:
           "{{ chroot_cmd }} bash -c 'mdadm --examine --scan >> {{ live_cd_mountpoint }}/etc/mdadm/mdadm.conf'"
-        creates: "{{ swap_dev_name }}"
       register: cmd_output
       changed_when: cmd_output.rc == 0
 
@@ -166,7 +161,7 @@
     - name: Run chroot command to add single encrypted swap partition to /etc/crypttab
       ansible.builtin.shell:
         cmd: "{{ chroot_cmd }} bash -c
-          'echo swap {{ disk_by_id[0] }}-part2 /dev/urandom
+          'echo swap {{ disk_by_id[0] }}-part{{ swap_partition }} /dev/urandom
           swap,cipher=aes-xts-plain64:sha256,size=512 >> /etc/crypttab'"
       register: cmd_output
       changed_when: cmd_output.rc == 0

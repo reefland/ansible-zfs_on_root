@@ -26,8 +26,8 @@
 
     - name: Remove ZFS labels from previous usage
       ansible.builtin.command:
-        cmd: "zpool labelclear -f {{ item }}-part3"
-        removes: "{{ item }}-part3"
+        cmd: "zpool labelclear -f {{ item }}-part{{ root_partition }}"
+        removes: "{{ item }}-part{{ root_partition }}"
       register: cmd_output
       changed_when:
         cmd_output.rc == 0
@@ -37,8 +37,8 @@
 
     - name: Wipe mdadm superblock from partitions
       ansible.builtin.command:
-        cmd: "mdadm --zero-superblock --force {{ item }}-part1"
-        removes: "{{ item }}-part1"
+        cmd: "mdadm --zero-superblock --force {{ item }}-part{{ boot_partition }}"
+        removes: "{{ item }}-part{{ boot_partition }}"
       register: cmd_output
       changed_when:
         cmd_output.rc == 0
