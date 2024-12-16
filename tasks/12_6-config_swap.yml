@@ -86,7 +86,7 @@
         "{{ disk_by_id }}"
 
     # The "-R" - is needed to suppress the "Continue creating array?" prompt
-    - name: Run chroot command to create mdadm device for multi-disk swap
+    - name: Run command to create mdadm device for multi-disk swap
       ansible.builtin.command:
         cmd: >
           mdadm --create {{ swap_dev_name }} --verbose -R --metadata=1.2
@@ -96,10 +96,10 @@
       register: cmd_output
       changed_when: cmd_output.rc == 0
 
-    - name: Run chroot command to create mdadm.conf file multi-disk swap partition
-      ansible.builtin.command:
+    - name: Run command to create mdadm.conf file multi-disk swap partition
+      ansible.builtin.shell:
         cmd:
-          "{{ chroot_cmd }} bash -c 'mdadm --examine --scan >> {{ live_cd_mountpoint }}/etc/mdadm/mdadm.conf'"
+          "mdadm --examine --scan >> {{ live_cd_mountpoint }}/etc/mdadm/mdadm.conf"
       register: cmd_output
       changed_when: cmd_output.rc == 0
 
