@@ -396,7 +396,6 @@ This is the list and order of execution for all tags defined for this playbook:
       - config_swap [not tested]
       - system_tweaks
       - first_boot_prep
-      - fix_mount_order
       - unmount_chroot
       - reboot_remote
       - create_regular_users
@@ -417,7 +416,7 @@ A reasonable way to build a system in stages using a group of tags instead of ca
 --tags="create_filesystems, create_datasets, config_system, install_zfs"
 --tags="config_boot_fs, install_dracut, install_refind, install_syslinux"
 --tags="install_zfsbootmenu, config_swap, system_tweaks, first_boot_prep"
---tags="fix_mount_order, unmount_chroot, reboot_remote"
+--tags="unmount_chroot, reboot_remote"
 --tags="create_regular_users, copy_ssh_keys_notice, install_dropbear, final_setup, restart_remote_final"
 ```
 
