@@ -99,7 +99,7 @@
     - name: Run command to create mdadm.conf file multi-disk swap partition
       ansible.builtin.shell:
         cmd:
-          "mdadm --examine --scan >> {{ live_cd_mountpoint }}/etc/mdadm/mdadm.conf"
+          "mdadm --examine --scan > {{ live_cd_mountpoint }}/etc/mdadm/mdadm.conf"
       register: cmd_output
       changed_when: cmd_output.rc == 0
 
