@@ -6,6 +6,19 @@
   tags:
     - first_boot_prep
   block:
+    - name: Run chroot commands to make sure EFI boot array is mounted
+      ansible.builtin.command:
+        cmd: "{{ chroot_cmd }} bash -c '{{ item }}'"
+      register: cmd_output
+      changed_when: cmd_output.rc == 0
+      with_items:
+        - "mdadm --assemble {{ boot_dev_name }} --conf /etc/mdadm/mdadm.conf"
+        - "sleep 2"
+        - "mount {{ efi_boot_mountpoint }}"
+      args:
+        creates: "{{ efi_boot_path }}"
+      when:
+        - disk_by_id | length | int > 1
 
     - name: Run chroot command add ansible user account (password disabled)
       ansible.builtin.command:
@@ -55,18 +68,27 @@
         - "[ -d /proc/acpi ] && apt-get -qq --yes install acpi acpid &&
           systemctl enable acpid && systemctl stop acpid"
 
-    - name: Add nicer PS1 USER prompt
-      ansible.builtin.lineinfile:
-        path: "{{ item }}"
-        line: >
-          PS1="${debian_chroot:+($debian_chroot)}\[\$(tput setaf 2)\]\u@\[\$(tput bold)\]\[\$(tput
-          setaf 5)\]\h\[\$(tput sgr0)\]\[\$(tput setaf 7)\]:\[\$(tput bold)\]\[\$(tput
-          setaf 4)\]\w\[\$(tput setaf 7)\]\\$ \[\$(tput sgr0)\]"
-        state: present
-        backup: true
+    - name: Copy bashrc file to specified locations
+      ansible.builtin.template:
+        src: bashrc.j2
+        dest: "{{ item }}"
+        owner: "root"
+        group: "root"
+        mode: "0700"
       with_items:
         - "{{ live_cd_mountpoint }}/etc/bash.bashrc"
         - "{{ live_cd_mountpoint }}/etc/skel/.bashrc"
+
+    - name: Copy bash_aliases file to specified locations
+      ansible.builtin.template:
+        src: bash_aliases.j2
+        dest: "{{ item }}"
+        owner: "root"
+        group: "root"
+        mode: "0700"
+      with_items:
+        - "{{ live_cd_mountpoint }}/etc/skel/.bash_aliases"
+        - "{{ live_cd_mountpoint }}/root/.bashrc"
 
     - name: Add nicer PS1 ROOT prompt
       ansible.builtin.lineinfile: # noqa yaml[line-length]
@@ -110,8 +132,16 @@
       changed_when: cmd_output.rc == 0
       with_items:
         - "dracut -f --regenerate-all"
-        - "sleep 2"
-        - "generate-zbm --debug"
+
+    - name: Run chroot commands to update Syslinux when not using EFI
+      ansible.builtin.command:
+        cmd: "{{ chroot_cmd }} bash -c '{{ item }}'"
+      register: cmd_output
+      changed_when: cmd_output.rc == 0
+      with_items:
+        - "/boot/efi/syslinux-update.sh"
+      when:
+        - efi_firmware_directory.stat.isdir is undefined
 
     - name: Allow read-only ZFS commands with no sudo password
       ansible.builtin.shell: # noqa command-instead-of-shell
