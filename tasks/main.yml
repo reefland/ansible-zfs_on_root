@@ -39,9 +39,8 @@
     - 12_4-install_syslinux.yml
     - 12_5-install_zfsbootmenu.yml
     - 12_6-config_swap.yml
-    - 12_7-system_tweaks.yml
-    - 13_first_boot_prep.yml
-    # - 14-not-used
+    - 13_system_tweaks.yml
+    - 14_first_boot_prep.yml
     - 15_unmount_chroot.yml
     - 16_restart_remote.yml
     - 17_create_regular_user.yml
