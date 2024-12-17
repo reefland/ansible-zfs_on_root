@@ -7,11 +7,11 @@
     - create_regular_users
   block:
     - name: Create ZFS data set for home directory of regular user
-      community.general.zfs: # noqa yaml[truthy]
+      community.general.zfs:
         name: "{{ root_pool_home_dataset_path }}/{{ item.user_id }}"
         state: present
         extra_zfs_properties:
-          canmount: on
+          canmount: on # noqa yaml[truthy]
           mountpoint: "/home/{{ item.user_id }}"
       loop_control:
         label: "{{ item.user_id }}"
@@ -36,6 +36,16 @@
       register: accounts
       notify:
         - Force change password
+
+    - name: Create Regular User .ssh directory
+      ansible.builtin.file:
+        state: directory
+        owner: "{{ item.user_id }}"
+        path: "/home/{{ item.user_id }}/.ssh"
+        mode: "700"
+      loop_control:
+        label: "{{ item.user_id }}"
+      loop: "{{ regular_user_accounts }}"
 
 - name: Flush handlers
   ansible.builtin.meta: flush_handlers
