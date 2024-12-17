@@ -10,6 +10,9 @@
   # https://github.com/openzfs/openzfs-docs/issues/270
     - name: Unmount chroot file systems
       ansible.builtin.shell: |
+        set -o pipefail
+        unmount /boot/efi
+        umount -n {{ live_cd_mountpoint }}/{dev/pts,dev,sys,proc}
         zfs umount -a
         mount | grep -v zfs | tac | awk '/\/mnt/ {print $3}' | xargs -i{} umount -lf {}
         umount /mnt/*
@@ -25,6 +28,7 @@
 
     - name: Export all ZFS Pools
       ansible.builtin.command:
-        cmd: "zpool export -a"
+        cmd: "zpool export {{ root_pool_name }}"
+        removes: "{{ live_cd_mountpoint }}/sys"
       register: cmd_output
       changed_when: cmd_output.rc == 0
