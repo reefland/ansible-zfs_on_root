@@ -114,7 +114,7 @@
         dest: "{{ item }}"
         owner: "root"
         group: "root"
-        mode: "0700"
+        mode: "0644"
       with_items:
         - "{{ live_cd_mountpoint }}/etc/bash.bashrc"
         - "{{ live_cd_mountpoint }}/etc/skel/.bashrc"
@@ -125,7 +125,7 @@
         dest: "{{ item }}"
         owner: "root"
         group: "root"
-        mode: "0700"
+        mode: "0640"
       with_items:
         - "{{ live_cd_mountpoint }}/etc/skel/.bash_aliases"
         - "{{ live_cd_mountpoint }}/root/.bashrc"
