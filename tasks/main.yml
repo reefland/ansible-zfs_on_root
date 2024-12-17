@@ -43,10 +43,10 @@
     - 14_first_boot_prep.yml
     - 15_unmount_chroot.yml
     - 16_restart_remote.yml
-    - 17_create_regular_user.yml
+    - 17_0-create_regular_user.yml
     - 17_5-copy_keys_notice.yml
-    - 18_enable_dropbear.yml
-    - 18_1_config_dracut_network.yml
+    - 18_0-enable_dropbear.yml
+    - 18_1-config_dracut_network.yml
     - 19_final_setup.yml
     - 20_restart_remote_final.yml
   loop_control:
