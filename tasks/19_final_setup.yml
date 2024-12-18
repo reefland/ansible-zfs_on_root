@@ -90,7 +90,7 @@
         msmtprc_mode: "0600"
 
     # Enable ZFS Email Notifications
-    - name: Modify syslinux-update.sh
+    - name: Modify ZFD for Email Notifications
       ansible.builtin.replace:
         path: "/etc/zfs/zed.d/zed.rc"
         regexp: '{{ find_values.regexp }}'
