@@ -61,3 +61,9 @@
         path: "/etc/cmdline.d"
         mode: "0755"
         state: directory
+
+    - name: Create /root/.ssh/authorized_keys for root
+      ansible.builtin.file:
+        path: "/root/.ssh/authorized_keys"
+        mode: "0640"
+        state: touch
