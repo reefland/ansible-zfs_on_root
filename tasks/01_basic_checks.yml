@@ -199,11 +199,12 @@
 
 # If somehow a single device, has been defined as mirror or raidz then fail.
 - name: Confirm single device root pool type defined correctly
-  ansible.builtin.fail:
-    msg: "ERROR: Root pool type cannot be type mirror/raidz/raidz2 with one device,
-      fix it in zfs_on_root.yml - set_root_pool_type 1:"
+  ansible.builtin.assert:
+    that:
+      - root_pool_type == ""
+    fail_msg: "ERROR: Root pool type cannot be type mirror/raidz/raidz2 with one device,
+      fix it in defaults/main.yml - set_root_pool_type.1 to \"\" "
   when:
-    - not root_pool_type == ""
     - disk_by_id | length | int == 1
   tags:
     - always
@@ -213,11 +214,12 @@
 
 # If somehow 2 devices are not defined as a mirror then fail.
 - name: Confirm dual device boot pool type defined correctly
-  ansible.builtin.fail:
-    msg: "ERROR: Root pool must be type mirror with 2 devices,
-      fix it in zfs_on_root.yml - correct set_root_pool_type 2:"
+  ansible.builtin.assert:
+    that:
+      - root_pool_type == "mirror"
+    fail_msg: "ERROR: Root pool type mirror with 2 devices,
+      fix it in defaults/main.yml - set_root_pool_type.2 to \"mirror\" "
   when:
-    - not root_pool_type == "mirror"
     - disk_by_id | length | int == 2
   tags:
     - always
@@ -227,12 +229,13 @@
 
 # If somehow raidz2 was specified and with less than 4 devices then fail
 - name: Confirm raidz2 device root pool type has more than 4 devices
-  ansible.builtin.fail:
-    msg: "ERROR: Root pool must have more than 4 devices to use raidz2,
-      fix it in zfs_on_root.yml - correct set_boot_pool_type {{ disk_by_id | length | int }}:"
+  ansible.builtin.assert:
+    that:
+      - not disk_by_id | length | int < 4
+    fail_msg: "ERROR: Root pool must have more than 4 devices to use raidz2,
+      fix it in defaults/main.yml - set_root_pool_type.{{ disk_by_id | length | int }} to \"raidz\" "
   when:
     - root_pool_type == "raidz2"
-    - disk_by_id | length | int < 4
   tags:
     - always
 
@@ -241,14 +244,14 @@
 
   # If ROOT Pool is 3 or more devices and not mirror or raidz then fail
 - name: Confirm multiple device root type defined correctly
-  ansible.builtin.fail:
-    msg: >
-      "ERROR: Root pool must be type mirror or raidz with {{ disk_by_id | length | int }} devices,
-      fix it in zfs_on_root.yml - correct set_boot_pool_type {{ disk_by_id | length | int }}:"
+  ansible.builtin.assert:
+    that:
+      - (root_pool_type == "mirror") or
+        (root_pool_type == "raidz") or
+        (root_pool_type == "raidz2")
+    fail_msg: "ERROR: Root pool must be type mirror or raidz with {{ disk_by_id | length | int }} devices,
+      fix it in defaults/main.yml - set_root_pool_type.{{ disk_by_id | length | int }} to \"mirror\" or \"raidz\" "
   when:
-    - (root_pool_type != "mirror") and
-      (root_pool_type != "raidz") and
-      (root_pool_type != "raidz2")
     - disk_by_id|length|int > 2
   tags:
     - always
@@ -260,14 +263,15 @@
 # (IE a 5 way mirror not supported, should be a raidz or raidz2 or not used)
 
 - name: Confirm mirrored vdevs for root pool has even number of devices
-  ansible.builtin.fail:
-    msg: >
-      "ERROR: A mirror of more than 4 devices (mirrored vdevs) must use an even number of devices.
-      A {{ disk_by_id | length | int }} mirror is not supported, fix it in zfs_on_root.yml"
+  ansible.builtin.assert:
+    that:
+      - disk_by_id|length|int is even
+    fail_msg: "ERROR: A mirror of more than 4 devices (mirrored vdevs) must use an even number of devices.
+      A {{ disk_by_id | length | int }} device mirror is not supported, fix it in defaults/main.yml
+      - set_root_pool_type.{{ disk_by_id | length | int }} to \"raidz\" or \"raidz2\" "
   when:
     - root_pool_type == "mirror"
     - disk_by_id|length|int > 4
-    - disk_by_id|length|int is odd
   tags:
     - always
 
