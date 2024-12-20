@@ -23,7 +23,7 @@
     label: "{{ item.item.user_id }}"
 
 - name: Restart SSHD Server
-  ansible.builtin.service:
+  ansible.builtin.systemd_service:
     name: ssh
     state: restarted
-  when: update_sshd.changed
+    daemon_reload: true
