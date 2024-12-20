@@ -81,7 +81,7 @@
         group: "root"
         mode: "0644"
       with_items:
-        - { source: "{{ refind_boot_menu_logo_filename }}", dest: "{{ refind_path }}/logo.jpg" }
+        - { source: "{{ refind_boot_menu_logo_filename }}", dest: "{{ refind_path }}/{{ refind_boot_menu_logo_filename }}" }
         - { source: "os_linux.png", dest: "{{ refind_path }}/icons/"}
       when:
         - refind_boot_menu_logo  | default(false)
@@ -98,7 +98,7 @@
       ansible.builtin.replace:
         path: "{{ live_cd_mountpoint }}{{ refind_path }}/refind.conf"
         regexp: '^#banner hostname.bmp(.*$)'
-        replace: 'banner logo.jpg'
+        replace: 'banner {{ refind_boot_menu_logo_filename }}'
       when:
         - refind_boot_menu_logo  | default(false)
 
