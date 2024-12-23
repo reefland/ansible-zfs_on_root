@@ -50,7 +50,7 @@
     - name: Copy EUFI shell to EFI system
       ansible.builtin.copy:
         src: "{{ live_cd_mountpoint }}/usr/share/efi-shell-x64/shellx64.efi"
-        dest: "{{ live_cd_mountpoint }}/boot/efi/EFI/shellx64.efi"
+        dest: "{{ live_cd_mountpoint }}/boot/efi/EFI/tools/shellx64.efi"
         owner: "root"
         group: "root"
         mode: "0644"
