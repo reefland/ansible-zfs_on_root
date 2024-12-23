@@ -22,6 +22,28 @@ regular_user_accounts:
     full_name: "Richard Durso"
     groups: "adm,cdrom,dip,lpadmin,lxd,plugdev,sambashare,sudo"
     shell: "/bin/bash"
+    google_auth: true
+
+###############################################################################
+# Google Authenticator Settings
+###############################################################################
+# Google Authenticator is only installed if at least one user is defined above
+# with it enabled, and is only used (by default) for password sessions not cert
+# based sessions.
+
+# Set the nullok parameter for pam_google_authenticator.so in /etc/pam.d/sshd
+# When true, this allows password logins if no ~/.google_authenticator exists
+# If false, then users can NOT login until ~/.google_authenticator is created.
+google_auth_nullok: true
+
+# Force user to use authenticator even with SSH key
+google_auth_force: true
+
+# Default label and issuer if not defined in inventory file for the host(s)
+# NOTES: 1) Be sure to use char encoding for spaces such as "Example%20Inc."
+#        2) "{{ username }}" is replaced with the "user_id" defined above.
+google_auth_label: "{{ inventory_hostname }}:{{ username }}"
+google_auth_issuer: "Ubuntu"
 
 ###############################################################################
 # Computer Configuration Settings
@@ -35,11 +57,11 @@ refind_boot_menu_timeout: "10"
 # Enables background image for refind / syslinux
 refind_boot_menu_logo: true
 
-## Needs to be a JPG file, as this will be used as "logo.jpg" within refind.
-refind_boot_menu_logo_filename: "low-wave-logo.jpg"
+## Needs to be a JPG or PNG file.
+refind_boot_menu_logo_filename: "ubuntu-style.png"
 
-## Needs to be a JPG file, as this will be used as "logo_sm.jpg" within syslinus.
-syslinux_boot_menu_logo_filename: "low-wave-logo_sm.jpg"
+## Needs to be a JPG or PNG file at 640x48 for syslinux.
+syslinux_boot_menu_logo_filename: "ubuntu-style-sm.png"
 
 # For Full GUI Desktop installation (set to false) or command-line only server
 # environment (set to true)

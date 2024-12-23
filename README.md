@@ -27,17 +27,19 @@ Originally based on the [OpenZFS ZFS on Root](https://openzfs.github.io/openzfs-
 * Customized SSH Configuration Options
 * DropBear support for unlocking ZFS encrypted pool remotely
 * Support for Apt-Cacher-NG proxy for cached packages
+* Support for Google Authenticator MFA on SSH logins
 
 ---
 
 ## TL;DR
 
 * While this is a WORK IN PROGRESS, I've built many systems using various combinations.
-  * However not every combination has been tested.  If you find a problem, please open a GitHub issue in this repository.
+  * However not every combination has been tested.
+  * If you find a problem, please open a GitHub issue in this repository.
   * Review [known issues](README.md#known-issues) for workarounds.
 
 * This Ansible based process is intended to be used against bare-metal systems or virtual machines (just needs SSH access to get started).
-  * This is intended for initial installation ONLY, this is not for applying changes over time -- you should make those changes via some other playbook / change control system.
+  * Designed for initial installation ONLY, this is not for applying changes over time -- you should make those changes via some other playbook / change control system.
 * This process uses ENTIRE disk(s) and wipes partitions on the specified disks, any existing data on these partitions on the target system will be lost.
 * Review the `defaults/main.yml` to set temporary passwords,  non-root user account(s) and basic rules on boot partition sizes, swap partitions, etc.
 * Defaults to building a headless server environment, however a full graphical desktop can be enabled.
@@ -52,10 +54,10 @@ Originally based on the [OpenZFS ZFS on Root](https://openzfs.github.io/openzfs-
 
 ## Requirements
 
-* [Ansible](https://www.ansible.com/) (Built with Ansible Core 2.18 or newer)
+* [Ansible](https://www.ansible.com/) (Tested with Ansible Core 2.18)
 * [Ubuntu 24.04.x "Noble Numbat" Live CD](https://ubuntu.com/download/desktop/) (24.04 LTS Desktop - DO NOT use server images)
   * _NOTE: you can configure for command-line only server build even when using the desktop image._
-* Computers that have less than 2 GiB of memory run ZFS slowly. 4 GiB of memory is recommended for normal performance in basic workloads.
+* Computers that have less than 2 GiB RAM run ZFS slowly. 4 GiB of memory is recommended for normal performance in basic workloads.
 
 ## Caution
 
@@ -73,12 +75,24 @@ Originally based on the [OpenZFS ZFS on Root](https://openzfs.github.io/openzfs-
 
 * Can be themed and customized as well!
 
-**ZFSbootManager** allows you to select which "boot environment" to use, this can be a previous ZFS Snapshot. See [Project Home Page](https://github.com/zbm-dev/zfsbootmenu) for details.
+**ZFSbootManager** (ZBM) allows you to select which "Boot Environment" to use, this can be a previous ZFS Snapshot. See [Project Home Page](https://github.com/zbm-dev/zfsbootmenu) for details.
 
 ![ZFS Boot Menu Image](./docs/zfsbootmenu.png)
 
-* Can browses, clone and promote ZFS snapshots to new boot environments.
-* Snapshots will automatically be taken before each `apt` or `dpkg` update.
+* Use ZBM to browses, clone and promote ZFS snapshots to new boot environments.
+* NOTE: Snapshots will automatically be taken before each `apt` or `dpkg` update, you can use ZBM to boot from these snapshots should a patch make your system unbootable.
+
+```shell
+$ zfs list -t snapshot
+NAME                                      USED  AVAIL  REFER  M
+OUNTPOINT
+rpool/ROOT/ubuntu@base_install            810K      -  1.64G  -
+rpool/ROOT/ubuntu@apt_2024-12-20-082816     0B      -  1.65G  -
+rpool/ROOT/ubuntu@apt_2024-12-20-082817     0B      -  1.65G  -
+rpool/ROOT/ubuntu@apt_2024-12-20-082824   256K      -  1.65G  -
+rpool/ROOT/ubuntu@apt_2024-12-20-084427   426K      -  1.64G  -
+rpool/ROOT/ubuntu@apt_2024-12-20-085424  89.8M      -  1.65G  -
+```
 
 ---
 
@@ -250,10 +264,12 @@ regular_user_accounts:
     full_name: "Richard Durso"
     groups: "adm,cdrom,dip,lpadmin,lxd,plugdev,sambashare,sudo"
     shell: "/bin/bash"
+    google_auth: true
 ```
 
 ### Additional Settings to Review
 
+* Review [Google Authenticator Settings](docs/google-authenticator.md)
 * Review [Computer Configuration Settings](docs/computer-config-settings.md)
 * Review [SWAP Partition Settings](docs/swap-partition-settings.md)
 * Review [Root Pool & Partition Settings](docs/root-partition-settings.md)

@@ -44,6 +44,7 @@
     - 15_unmount_chroot.yml
     - 16_restart_remote.yml
     - 17_0-create_regular_user.yml
+    - 17_1-install_google_auth.yml
     - 17_5-copy_keys_notice.yml
     - 18_0-enable_dropbear.yml
     - 19_final_setup.yml
