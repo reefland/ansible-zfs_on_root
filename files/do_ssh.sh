@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # This is a helper script to reduce the amount of cut & paste 
 # needed to get Live CD ready for ansible.
@@ -44,6 +44,11 @@ if [[ $? -ne 0 ]]; then
   echo "ERROR: while installing required packages (apt install), unable to continue."
   exit
 fi
+
+## Enable SFTP Server for Ansible File Transfers
+sudo sh -c 'echo "Subsystem       sftp    /usr/lib/openssh/sftp-server" >> /etc/ssh/sshd_config.d/sftp-server'
+sudo systemctl daemon-reload
+sudo systemctl restart ssh
 
 # Disable swap partitions, we don't want them in use when partitions are removed.
 sudo swapoff -a
