@@ -22,7 +22,7 @@ regular_user_accounts:
     full_name: "Richard Durso"
     groups: "adm,cdrom,dip,lpadmin,lxd,plugdev,sambashare,sudo"
     shell: "/bin/bash"
-    google_auth: true
+    google_auth: false
 
 ###############################################################################
 # Google Authenticator Settings
@@ -37,7 +37,7 @@ regular_user_accounts:
 google_auth_nullok: true
 
 # Force user to use authenticator even with SSH key
-google_auth_force: true
+google_auth_force: false
 
 # Default label and issuer if not defined in inventory file for the host(s)
 # NOTES: 1) Be sure to use char encoding for spaces such as "Example%20Inc."
