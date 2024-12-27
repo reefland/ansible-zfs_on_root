@@ -22,7 +22,7 @@ After=zfs-import.target
 Type=oneshot
 RemainAfterExit=yes
 
-ExecStart=/usr/bin/zfs-multi-mount.sh --systemd {{ root_pool_home_dataset_path: }}
+ExecStart=/usr/bin/zfs-multi-mount.sh --systemd {{ root_pool_home_dataset_path }}
 
 [Install]
 WantedBy=zfs-mount.service
