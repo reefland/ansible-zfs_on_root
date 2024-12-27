@@ -8,7 +8,7 @@
 
     - name: Install Dracut-Network and Dropbear
       ansible.builtin.apt:
-        name: ['dracut-network', 'dropbear-bin']
+        name: ['dracut-network', 'dropbear-bin', 'isc-dhcp-client']
         state: present
       when:
         - ansible_os_family == "Debian"
@@ -72,8 +72,6 @@
       register: cmd_output
       changed_when: cmd_output.rc == 0
       with_items:
-        # The dropbear.conf will look for these 3 keys
-        - "rsa"
         - "ecdsa"
         - "ed25519"
 
