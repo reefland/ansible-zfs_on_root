@@ -434,7 +434,7 @@ A reasonable way to build a system in stages using a group of tags instead of ca
 --tags="config_boot_fs, install_dracut, install_refind, install_syslinux"
 --tags="install_zfsbootmenu, config_swap, system_tweaks, first_boot_prep"
 --tags="unmount_chroot, reboot_remote"
---tags="create_regular_users, copy_ssh_keys_notice, install_dropbear, final_setup, restart_remote_final"
+--tags="create_regular_users, install_google_auth, copy_ssh_keys_notice, install_dropbear, final_setup, restart_remote_final"
 ```
 
 ### Skipping Tags
