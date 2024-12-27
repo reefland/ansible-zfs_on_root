@@ -190,6 +190,7 @@
 - name: Enable LZ4 for zswap compressed page cache in front of swap.
   when:
     - ansible_nodename != "localhost"
+    - enable_swap_partitions|default(true)|bool
   tags:
     - config_swap
   block:
