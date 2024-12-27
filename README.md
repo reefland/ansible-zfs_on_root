@@ -415,6 +415,7 @@ This is the list and order of execution for all tags defined for this playbook:
       - unmount_chroot
       - reboot_remote
       - create_regular_users
+      - install_google_auth
       - copy_ssh_keys_notice
       - install_dropbear
       - final_setup
