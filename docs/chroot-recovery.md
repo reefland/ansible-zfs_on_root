@@ -7,8 +7,8 @@
 This will mount all pools and file systems under `/mnt` directory.
 
 1. Boot the Ubuntu Live CD:
-    * Select option <button name="button">Try Ubuntu</button>.
-    * Open a terminal within the Live CD environment - press <kbd>Ctrl</kbd> <kbd>Alt</kbd>-<kbd>T</kbd>.
+    * Select option `Try Ubuntu`.
+    * Open a terminal within the Live CD environment - press `Ctrl` `Alt`-`T`.
 
 2. Become Root
 
@@ -19,6 +19,8 @@ This will mount all pools and file systems under `/mnt` directory.
 3. Install packages to support chroot environment
 
     ```shell
+    apt-get update
+
     apt-get install mdadm
     ```
 
@@ -32,21 +34,17 @@ This will mount all pools and file systems under `/mnt` directory.
 
     ```shell
     zpool import -f -N -R /mnt {root_pool_name}
-    zfs load-key -a
-
-    zfs mount {root_pool_name}/ROOT/ubuntu
-    zfs mount {root_pool_name}/ROOT/home/root
+    zfs load-key -L prompt -a
 
     zfs mount -a
     ```
 
     * The `{root_pool_name}` is unique to your system.  By default, this Ansible process names the pool after the hostname.  This is the equivalent of `rpool` in previous ZFS on Root methods.
 
-6. Create mdadm array of boot partitions and mount to `/mnt/boot/efi` directory
+6. Mount mdadm array of boot partitions to `/mnt/boot/efi` directory
 
     ```shell
-    mdadm --assemble /dev/md127  /dev/sda1 /dev/nvme0n1p1
-    mount /dev/md127 /mnt/boot/efi
+    mount /dev/md/*:efi /mnt/boot/efi
     ```
 
     * Above assumes just 2 devices.  Each device uses partition `1` on that device (standard partition for booting).
@@ -73,7 +71,6 @@ This will mount all pools and file systems under `/mnt` directory.
 
       ```shell
       dracut -v -f --regenerate-all
-      generate-zbm
       ```
 
 9. Exit chroot when ready (return to Live CD environment)
