@@ -136,6 +136,9 @@ efi_boot_mountpoint: "/boot/efi"
 # Path for EFI directory
 efi_boot_path: "{{ efi_boot_mountpoint }}/EFI"
 
+# Fallback Path for EFI, copy refined_x64.efi to this path/name
+efi_fallback_path: "{{ efi_boot_mountpoint }}/EFI/boot/bootx64.efi"
+
 # Path for ZFSBootMenu
 zfs_boot_menu_path: "{{ efi_boot_path }}/zfsbootmenu"
 
@@ -147,6 +150,9 @@ zfs_boot_menu_repo_url: "https://github.com/{{ zfs_boot_menu_repo }}"
 
 # ZFSBootMenu version for KERNEL files
 zfs_boot_menu_version: "v2.3.0"
+
+# ZFSBootMenu Repo URL to Download Source files
+zfs_boot_menu_source_url: "https://get.zfsbootmenu.org/source"
 
 # Memtest 86 versions to install
 memtest86_syslinux_version: "4.3.7"
