@@ -62,7 +62,7 @@ This will mount all pools and file systems under `/mnt` directory.
 8. Enter the chroot environment
 
     ```shell
-    chroot /mnt bash
+    unshare --mount --fork chroot /mnt /bin/bash --login
     ```
 
     * You are now within the chroot environment and can issue commands as if you have booted from it.  You can troubleshoot, view, logs, apply patches, work on ZFS items, whatever is needed to get your system bootable again.
@@ -72,6 +72,12 @@ This will mount all pools and file systems under `/mnt` directory.
       ```shell
       dracut -v -f --regenerate-all
       ```
+
+    * If you need to regenerate ZFSBootMenu
+
+    ```shell
+    generate-zbm --debug
+    ```
 
 9. Exit chroot when ready (return to Live CD environment)
 
