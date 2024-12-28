@@ -202,6 +202,16 @@
       register: cmd_output
       changed_when: cmd_output.rc == 0
 
+    - name: Run chroot command to Generate ZFSBootMenu
+      ansible.builtin.command:
+        cmd: "{{ chroot_cmd }} bash -c '{{ item }}'"
+      register: cmd_output
+      changed_when: cmd_output.rc == 0
+      with_items:
+        - "generate-zbm --debug"
+      when:
+        - zfs_boot_menu_compile | default(false) | bool
+
     - name: Update Syslinux when not using EFI
       ansible.builtin.command:
         cmd: "/boot/efi/syslinux-update.sh"

@@ -63,6 +63,18 @@ refind_boot_menu_logo_filename: "ubuntu-style.png"
 ## Needs to be a JPG or PNG file at 640x48 for syslinux.
 syslinux_boot_menu_logo_filename: "ubuntu-style-sm.png"
 
+# Use ZFSBootMenu KERNEL binary or Build From Source.  The KERNEL binary does
+# not seem to enable networking thus does not work with Dropbear for entering
+# ZFS encryption password at boot remotely.
+# Default: if "enable_dropbear_support" is true then "zfs_boot_menu_compile"
+# is true.
+zfs_boot_menu_compile: "{{ enable_dropbear_support }}"
+
+# Enable EFI Fallback - needed on some buggy UEFI BIOS which are hard
+# coded to only look for bootx64.efi file name. When set to true a copy
+# of refined_x64.efi will be copied to bootx64.efi
+efi_fallback_enabled: false
+
 # For Full GUI Desktop installation (set to false) or command-line only server
 # environment (set to true)
 command_line_only: true
