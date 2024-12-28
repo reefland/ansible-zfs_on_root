@@ -20,7 +20,7 @@
 
     - name: Run chroot command to mount /boot/efi directory
       ansible.builtin.command:
-        cmd: "{{ chroot_cmd }} bash -c 'mount {{ efi_boot_mountpoint }}'"
+        cmd: "{{ chroot_cmd }} bash -c 'findmnt /boot/efi || mount {{ efi_boot_mountpoint }}'"
       register: cmd_output
       changed_when: cmd_output.rc == 0
       args:
@@ -66,6 +66,25 @@
       with_items:
         - "[ -e {{ efi_boot_path }}/BOOT ] &&
           mvrefind {{ efi_boot_path }}/BOOT {{ refind_path }} || true"
+
+    - name: Create directory {{ efi_fallback_path }}
+      ansible.builtin.file:
+        path: "{{ live_cd_mountpoint }}/{{ efi_boot_mountpoint }}/EFI/boot/"
+        state: directory
+        mode: "0755"
+      when:
+        - efi_fallback_enabled | default(false) | bool
+
+    - name: Copy EUFI fallback shell if needed
+      ansible.builtin.copy:
+        src: "{{ live_cd_mountpoint }}/boot/efi/EFI/refind/refind_x64.efi"
+        dest: "{{ live_cd_mountpoint }}/{{ efi_fallback_path }}"
+        owner: "root"
+        group: "root"
+        mode: "0644"
+        remote_src: true
+      when:
+        - efi_fallback_enabled | default(false) | bool
 
     - name: Reduce rEFIND boot menu timeout from 20 seconds to new value
       ansible.builtin.replace:
