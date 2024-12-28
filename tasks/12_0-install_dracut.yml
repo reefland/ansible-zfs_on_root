@@ -65,5 +65,5 @@
     - name: Create /root/.ssh/authorized_keys for root
       ansible.builtin.file:
         path: "{{ live_cd_mountpoint }}/root/.ssh/authorized_keys"
-        mode: "0640"
+        mode: "0600"
         state: touch
