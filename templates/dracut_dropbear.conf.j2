@@ -1,7 +1,6 @@
 install_items+=" /etc/cmdline.d/dracut-network.conf "
 add_dracutmodules+=" crypt-ssh "
 ## Copy system keys for consistent access
-dropbear_rsa_key=/etc/dropbear/ssh_host_rsa_key
 dropbear_ecdsa_key=/etc/dropbear/ssh_host_ecdsa_key
 dropbear_ed25519_key=/etc/dropbear/ssh_host_ed25519_key
 ##Access by authorized keys only. No password.
