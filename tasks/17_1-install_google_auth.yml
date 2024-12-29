@@ -44,8 +44,12 @@
       with_items:
         - "my-ga-qr.sh"
         - "ga-create-config.sh"
+      when:
+        - google_auth_users | list | length > 0| default(false) | bool
 
     - name: Configure PAM and SSHD for Google Authenticator
+      when:
+        - google_auth_users | list | length > 0| default(false) | bool
       block:
         # The nullok allows regular login if ~/.google_authenticator doesn't exist
         # Putting at beginning of file means it will ask for token FIRST, then password
@@ -77,6 +81,7 @@
         - name: Force Google Authenticator ssh-key sessions
           when:
             - google_auth_force | default(false)
+            - google_auth_users | list | length > 0| default(false) | bool
           block:
             - name: Modify sshd_config to force use of google authenticator
               ansible.builtin.copy:
@@ -104,5 +109,5 @@
               #
               KbdInteractiveAuthentication yes
             mode: '0644'
-          notify:
-            - Restart SSHD Server
+          when:
+            - google_auth_users | list | length > 0| default(false) | bool
