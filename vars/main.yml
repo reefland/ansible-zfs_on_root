@@ -197,7 +197,7 @@ ssh_installation_helper_script: "do_ssh.sh"
 google_authenticator_secret_name: ".google_authenticator"
 
 # Google Authenticator secret path
-google_authenticator_secret_path: "/home/{{ username }}/.google_authenticator"
+google_authenticator_secret_path: "/home/$USER/.google_authenticator"
 
 # Comma Separated Device Number to include as possible "disk" devices
 # 8=[SATA, SCSI], 179=[MMC], 259=[NVMe]
