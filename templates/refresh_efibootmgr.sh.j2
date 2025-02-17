@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+# Remove ALL existing EFI Devices known to efibootmgr!
+
+# DEVICE is expected to be an array of EFI Boot Devices Boot0000*, Boot0001*, Boot0002*
+# Extract the unique number and delete the EFI entry
+for DEVICE in $(efibootmgr | awk '$1 ~ /Boot00/{print $1}')
+do
+  DEV_NUM="${DEVICE:7:1}"
+  echo "Removing EFI device: ${DEVICE}"
+  efibootmgr -b "${DEV_NUM}" -B
+done
+
+
+# Add replacement EFI devices.
+# Find all disks with a "-part1" expected to be boot partition.
+for DEVICE in $(find /dev/disk/by-id/ -name "*-part1"  -printf "%p\n" | grep -v -e "_1-part" -e "-eui" -e "wwn-" -e "usb-")
+do 
+  LABEL=$(readlink -f "${DEVICE}")
+  efibootmgr --create --gpt --disk "${DEVICE//-part1}" --part 1 -w --loader "\\EFI\\refind\\refind_x64.efi" --label "rEFind-${LABEL//\/dev\/}"
+done

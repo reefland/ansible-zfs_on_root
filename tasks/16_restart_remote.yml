@@ -7,13 +7,14 @@
     - name: If root pool encryption, show reminder of passphrase
       ansible.builtin.pause:
         prompt: |
-
           ##########################################################
           # {{ (ansible_ssh_host | default(ansible_host)) | default(inventory_hostname) }} will be rebooted.
           ##########################################################
 
+          {% if root_pool_encryption | default(false) | bool == true %}
             When prompted for passphrase for {{ root_pool_name }}:
             Encryption Passphrase: {{ (no_log_secrets | default(true)) | ternary("**********", passphrase) }}
+          {% endif %}
 
             No need to login at this point, but if you need it:
             Root Password: {{ (no_log_secrets | default(true)) | ternary("**********", default_root_password) }}
@@ -22,8 +23,6 @@
                   have to manually eject CD, it is not needed anymore.
 
           Press ENTER to reboot {{ (ansible_ssh_host | default(ansible_host)) | default(inventory_hostname) }}
-      when:
-        - root_pool_encryption | default(false) | bool
 
     - name: Commencing Reboot, will take a few minutes....
       ansible.builtin.reboot:

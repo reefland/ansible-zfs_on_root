@@ -1,12 +1,10 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # This is a helper script to reduce the amount of cut & paste 
 # needed to get Live CD ready for ansible.
 ###############################################################
 
 ANSIBLE_USER=ansible
-
-# sudo apt-add-repository universe && sudo apt update
 
 # Create ansible account and a home directory to store SSH keys
 echo
@@ -31,13 +29,26 @@ if [[ $? -ne 0 ]]; then
   exit
 fi
 
-# install SSH Server and Python to allow ansible to connect
-sudo apt install --yes openssh-server vim python3 python3-apt mdadm
+# Updated package repositories
+sudo apt-get -qq update
 if [[ $? -ne 0 ]]; then
   echo
-  echo "ERROR: installing required packages failed."
+  echo "ERROR: while updating package repositories (apt update), unable to continue."
   exit
 fi
+
+# install SSH Server and Python to allow ansible to connect
+sudo apt-get --no-install-recommends --yes install openssh-server vim python3 python3-apt mdadm
+if [[ $? -ne 0 ]]; then
+  echo
+  echo "ERROR: while installing required packages (apt install), unable to continue."
+  exit
+fi
+
+## Enable SFTP Server for Ansible File Transfers
+sudo sh -c 'echo "Subsystem       sftp    /usr/lib/openssh/sftp-server" >> /etc/ssh/sshd_config.d/sftp-server'
+sudo systemctl daemon-reload
+sudo systemctl restart ssh
 
 # Disable swap partitions, we don't want them in use when partitions are removed.
 sudo swapoff -a

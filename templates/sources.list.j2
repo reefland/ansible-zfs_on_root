@@ -1,5 +1,11 @@
-deb http://archive.ubuntu.com/ubuntu {{ubuntu_release}} main restricted multiverse
-deb http://archive.ubuntu.com/ubuntu {{ubuntu_release}} universe
-deb http://archive.ubuntu.com/ubuntu {{ubuntu_release}}-updates main restricted multiverse
-deb http://archive.ubuntu.com/ubuntu {{ubuntu_release}}-backports main restricted multiverse
-deb http://security.ubuntu.com/ubuntu {{ubuntu_release}}-security main restricted multiverse
+deb http://archive.ubuntu.com/ubuntu {{ubuntu_release}} main multiverse restricted
+deb-src http://archive.ubuntu.com/ubuntu {{ubuntu_release}} main multiverse restricted
+
+deb http://security.ubuntu.com/ubuntu {{ubuntu_release}}-security main multiverse restricted
+deb-src http://security.ubuntu.com/ubuntu {{ubuntu_release}}-security main multiverse restricted
+
+deb http://archive.ubuntu.com/ubuntu {{ubuntu_release}}-updates main multiverse restricted
+deb-src http://archive.ubuntu.com/ubuntu {{ubuntu_release}}-updates main multiverse restricted
+
+deb http://archive.ubuntu.com/ubuntu {{ubuntu_release}}-backports main multiverse restricted
+deb-src http://archive.ubuntu.com/ubuntu {{ubuntu_release}}-backports main multiverse restricted

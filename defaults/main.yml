@@ -22,6 +22,28 @@ regular_user_accounts:
     full_name: "Richard Durso"
     groups: "adm,cdrom,dip,lpadmin,lxd,plugdev,sambashare,sudo"
     shell: "/bin/bash"
+    google_auth: false
+
+###############################################################################
+# Google Authenticator Settings
+###############################################################################
+# Google Authenticator is only installed if at least one user is defined above
+# with it enabled, and is only used (by default) for password sessions not cert
+# based sessions.
+
+# Set the nullok parameter for pam_google_authenticator.so in /etc/pam.d/sshd
+# When true, this allows password logins if no ~/.google_authenticator exists
+# If false, then users can NOT login until ~/.google_authenticator is created.
+google_auth_nullok: true
+
+# Force user to use authenticator even with SSH key
+google_auth_force: false
+
+# Default label and issuer if not defined in inventory file for the host(s)
+# NOTES: 1) Be sure to use char encoding for spaces such as "Example%20Inc."
+#        2) "{{ username }}" is replaced with the "user_id" defined above.
+google_auth_label: "{{ inventory_hostname }}:{{ username }}"
+google_auth_issuer: "Ubuntu"
 
 ###############################################################################
 # Computer Configuration Settings
@@ -32,8 +54,26 @@ domain_name: "localdomain"
 # rEFInd Boot Menu Timeout by default is 20 seconds.
 refind_boot_menu_timeout: "10"
 
-# Enables background image for refind / syslinux (see files/logo.jpg)
+# Enables background image for refind / syslinux
 refind_boot_menu_logo: true
+
+## Needs to be a JPG or PNG file.
+refind_boot_menu_logo_filename: "ubuntu-style.png"
+
+## Needs to be a JPG or PNG file at 640x48 for syslinux.
+syslinux_boot_menu_logo_filename: "ubuntu-style-sm.png"
+
+# Use ZFSBootMenu KERNEL binary or Build From Source.  The KERNEL binary does
+# not seem to enable networking thus does not work with Dropbear for entering
+# ZFS encryption password at boot remotely.
+# Default: if "enable_dropbear_support" is true then "zfs_boot_menu_compile"
+# is true.
+zfs_boot_menu_compile: "{{ enable_dropbear_support }}"
+
+# Enable EFI Fallback - needed on some buggy UEFI BIOS which are hard
+# coded to only look for bootx64.efi file name. When set to true a copy
+# of refined_x64.efi will be copied to bootx64.efi
+efi_fallback_enabled: false
 
 # For Full GUI Desktop installation (set to false) or command-line only server
 # environment (set to true)
@@ -82,7 +122,8 @@ msmtp:
   enabled: true
   msmtp_domain: "gmail.com"
   # Default email alias name to sent alerts to (required)
-  msmtp_alias_default: "{{ secret_msmpt_send_to_email | default('not defined within vars/secrets/main.yml') }}"
+  msmtp_alias_default: "{{ secret_msmpt_send_to_email |
+    default('not defined within vars/secrets/main.yml') }}"
   # Optional Email alias address to redirect "root" emails to
   # msmtp_alias_root: "other.account.for.root@gmail.com"
   # Optional Email alias address to redirect "cron" emails to
@@ -94,9 +135,12 @@ msmtp:
       host: "smtp.gmail.com"
       port: "587"
       auth: "on"
-      from: "{{ secret_msmtp_send_from_email | default('not defined within vars/secrets/main.yml') }}"
-      user: "{{ secret_msmtp_auth_user | default('not defined within vars/secrets/main.yml') }}"
-      password: "{{ secret_msmtp_auth_password | default('not defined within vars/secrets/main.yml') }}"
+      from: "{{ secret_msmtp_send_from_email |
+        default('not defined within vars/secrets/main.yml') }}"
+      user: "{{ secret_msmtp_auth_user |
+        default('not defined within vars/secrets/main.yml') }}"
+      password: "{{ secret_msmtp_auth_password |
+        default('not defined within vars/secrets/main.yml') }}"
 
 ###############################################################################
 # Swap Partition Settings
@@ -108,7 +152,7 @@ enable_swap_partitions: false
 single_or_mirror_swap_partition_size_mb: "4096"
 
 # Swap partition size, per device, when three or more devices are used.
-# Estimated size in MB is:  #devices-1 * size_MB
+# Estimated size in MB is:  (num_devices-1) * (size_mb)
 raidz_swap_partition_size_mb: "1024"
 
 ###############################################################################
@@ -162,6 +206,16 @@ set_root_pool_type:
 
 # Define ZFS ashift value to use
 zfs_rpool_ashift: 12
+
+# On systems with lots of disks, enumerating them can sometimes take a long time,
+# which means the root disks may not have been enumerated before ZFS tries to
+# import the root pool. That drops you to an initramfs prompt where you have to
+# use 'zfs import -N <root_pool> ; exit'
+# This sets the same delay on:
+#  - ZFS_INITRD_POST_MODPROBE_SLEEP
+#  - ZFS_INITRD_PRE_MOUNTROOT_SLEEP
+zfs_pool_import_delay_enabled: true
+zfs_pool_import_delay_seconds: 10
 
 # Enable ZFS Pool Trim Service after creating
 # NOTE: false will create, just not enable by default.

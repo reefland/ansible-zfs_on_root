@@ -20,7 +20,7 @@
         label: "{{ item }}.j2"
 
     # Update Netplan Network file - not tested on multiple adapters, might break
-    - name: Get Network adapter name on Ubuntu
+    - name: Get Network Adapter Name on Ubuntu
       ansible.builtin.shell: |
         set -o pipefail
         nmcli device status | grep 'ethernet' | grep 'connected' | cut -d' ' -f1
@@ -34,24 +34,79 @@
       when:
         - debug|default(false)
 
+    - name: Get Network Adapter MAC Address
+      ansible.builtin.shell: |
+        set -o pipefail
+        nmcli dev show {{ nic_name.stdout }} | grep 'HWADDR' | awk '{print $2}'
+      changed_when: nic_mac_address.rc == 0
+      register:
+        nic_mac_address
+
+    - name: Debug Show Network Adapter MAC Address
+      ansible.builtin.debug:
+        msg: "{{ nic_mac_address.stout }}"
+      when:
+        - debug|default(false)
+
     - name: Copy netplan template to /mnt/etc/netplan/01-netcfg.yaml
       ansible.builtin.template:
         src: netplan.j2
         dest: "{{ live_cd_mountpoint }}/etc/netplan/01-netcfg.yaml"
         owner: root
         group: root
-        mode: '0644'
+        mode: '0600'
 
-    # Update sources.list file on Ubuntu
-    - name: Copy sources.list template to /mnt/etc/apt/sources.list
+    - name: Debug Show Distro Release
+      ansible.builtin.debug:
+        msg: "{{ ansible_distribution_release }}"
+
+    # OLD: Update sources.list file on Ubuntu bionic
+    - name: Copy sources templates to chroot /mnt
       ansible.builtin.template:
-        src: sources.list.j2
-        dest: "{{ live_cd_mountpoint }}/etc/apt/sources.list"
+        src: "{{ copy_file.file_name }}.j2"
+        dest: "{{ live_cd_mountpoint }}{{ copy_file.file_destination }}"
+        owner: root
+        group: root
+        mode: '0644'
+      loop:
+        - { file_name: "sources.list", file_destination: "/etc/apt/sources.list" }
+        - { file_name: "ubuntu_universe.list", file_destination: "/etc/apt/sources.list.d/ubuntu_universe.list"}
+      loop_control:
+        loop_var: copy_file
+        label: "{{ copy_file.file_name }}"
+      when:
+        - ansible_distribution == 'Ubuntu'
+        - ansible_distribution_release == 'bionic'
+
+    # Update ubuntu.sources file on modern Ubuntu releases
+    - name: Copy ubuntu.sources template to /mnt/etc/apt/sources.list.d/ubuntu.sources
+      ansible.builtin.template:
+        src: ubuntu.sources.j2
+        dest: "{{ live_cd_mountpoint }}/etc/apt/sources.list.d/ubuntu.sources"
         owner: root
         group: root
         mode: '0644'
       when:
         - ansible_distribution == 'Ubuntu'
+        - ansible_distribution_release == 'focal' or
+          ansible_distribution_release == 'jammy' or
+          ansible_distribution_release == 'noble'
+
+    # [ Apply APT-Cacher-NG Configuration ]########################################
+    # If an APT caching proxy server is available set this up early to reduce
+    # bandwidth requirements when downloading packages to install. This task will
+    # create file: /mnt/etc/apt/apt.conf.d/01proxy
+
+    - name: Apply Apt-Cacher-NG Configuration Update
+      ansible.builtin.template:
+        src: "apt_01proxy.j2"
+        dest: "{{ live_cd_mountpoint }}/etc/apt/apt.conf.d/01proxy"
+        owner: "root"
+        group: "root"
+        mode: "0644"
+      when:
+        - apt_http_proxy is defined or
+          apt_https_proxy is defined
 
 ###############################################################################
 # [ Start chroot Environment ]#################################################
@@ -69,45 +124,9 @@
       register: cmd_output
       changed_when: cmd_output.rc == 0
       with_items:
-#        - "mount --rbind /dev  {{ live_cd_mountpoint }}/dev"
-#        - "mount --rbind /proc {{ live_cd_mountpoint }}/proc"
-#        - "mount --rbind /sys  {{ live_cd_mountpoint }}/sys"
         - "mount -t proc /proc {{ live_cd_mountpoint }}/proc"
         - "mount -t sysfs sys  {{ live_cd_mountpoint }}/sys"
         - "mount -B /dev  {{ live_cd_mountpoint }}/dev"
         - "mount -t devpts pts {{ live_cd_mountpoint }}/dev/pts"
-
-    ###############################################################################
-    # [ Apply APT-Cacher-NG Configuration ]########################################
-    # If an APT caching proxy server is available set this up early to reduce
-    # bandwidth requirements when downloading packages to install. This task will
-    # create file: /mnt/etc/apt/apt.conf.d/01proxy
-
-    - name: Apply Apt-Cacher-NG Configuration Update
-      ansible.builtin.template:
-        src: "apt_01proxy.j2"
-        dest: "{{ live_cd_mountpoint }}/etc/apt/apt.conf.d/01proxy"
-        owner: "root"
-        group: "root"
-        mode: "0644"
-      when:
-        - apt_http_proxy is defined or
-          apt_https_proxy is defined
-
-    - name: Run chroot command for apt update
-      ansible.builtin.command:
-        cmd: "{{ chroot_cmd }} bash -c 'apt-get -qq update'"
-      register: cmd_output
-      changed_when: cmd_output.rc == 0
-
-    - name: Configure chroot Environment
-      ansible.builtin.command:
-        cmd: "{{ chroot_cmd }} bash -c '{{ item }}'"
-      register: cmd_output
-      changed_when: cmd_output.rc == 0
-      with_items:
-        - "locale-gen --purge en_US.UTF-8 {{ locale_prefix }}"
-        - "update-locale LANG={{ locale_prefix }}"
-        - "dpkg-reconfigure --frontend noninteractive locales tzdata keyboard-configuration console-setup"
 
 ###############################################################################

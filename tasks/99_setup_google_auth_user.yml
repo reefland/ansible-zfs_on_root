@@ -1,0 +1,121 @@
+# Based on: https://github.com/Halfwalker/ansible-googleauth
+# This is a sub-task called by install_google_auth.yml
+
+---
+- name: Debug Setup Google Authenticator for user
+  ansible.builtin.debug:
+    msg: "Setup Google Authenticator for user: {{ setup_user.user_id | default('NONE') }}"
+  when:
+    - debug | default(false)
+
+- name: Ensure we have the user's group
+  when:
+    - setup_user.user_id is defined
+  block:
+    - name: Set username fact to {{ setup_user.user_id }}
+      ansible.builtin.set_fact:
+        username: "{{ setup_user.user_id }}"
+
+    - name: Get passwd DB entry for user {{ username }}
+      ansible.builtin.getent:
+        database: passwd
+        key: "{{ username }}"
+      register: user_pw
+
+    - name: Get group DB entry for user {{ username }}
+      ansible.builtin.getent:
+        database: group
+        key: "{{ user_pw.ansible_facts.getent_passwd[setup_user.user_id][2] }}"
+      register: user_gid
+
+    - name: Set groupname fact to {{ user_gid.ansible_facts.getent_group.keys() | first }}
+      ansible.builtin.set_fact:
+        groupname: "{{ user_gid.ansible_facts.getent_group.keys() | first }}"
+
+- name: Check for existing .google_authenticator for user {{ username }}
+  ansible.builtin.stat:
+    path: "{{ google_authenticator_secret_path }}"
+  register: google_auth_config_local
+
+- name: Only generate a new config if no existing local one
+  when:
+    - not google_auth_config_local.stat.exists  # No existing secret
+  block:
+    - name: Generate a google auth config
+      ansible.builtin.command:
+        cmd: "/usr/bin/google-authenticator --time-based --disallow-reuse --label={{ google_auth_label }}
+          --qr-mode=UTF8 --rate-limit=3 --rate-time=30 --secret={{ google_authenticator_secret_path }} --window-size=3 --force --quiet"
+      args:
+        creates: "{{ google_authenticator_secret_path }}"
+      register: google_auth_create
+
+    - name: Set .google_authenticator secret file perms to 400
+      ansible.builtin.file:
+        path: "{{ google_authenticator_secret_path }}"
+        owner: "{{ username }}"
+        group: "{{ groupname }}"
+        mode: "0400"
+
+#
+# Now we deal with a .google_authernticator, regardless of whether it already existed or was newly created
+#
+- name: Pulling in .google_authenticator for user {{ username }}
+  ansible.builtin.slurp:
+    src: "{{ google_authenticator_secret_path }}"
+  register: google_auth_file
+
+- name: Set google auth config fact
+  ansible.builtin.set_fact:
+    google_auth_config_mine: "{{ google_auth_file['content'] | b64decode }}"
+
+- name: Parse TOTP variable
+  ansible.builtin.set_fact:
+    totp_lines: "{{ google_auth_config_mine.split('\n') | map('trim') | list }}"
+
+- name: Filter valid lines
+  ansible.builtin.set_fact:
+    valid_lines: "{{ totp_lines | reject('search', '^\"') | list }}"
+
+# Main secret must be 16 or 26 chars.  Must be at least 5x scratch codes
+- name: Validate secret and scratch codes
+  ansible.builtin.assert:
+    that:
+      - "valid_lines[0] is defined and valid_lines[0] | length in [16, 26] and valid_lines[0] is match('^[A-Z0-9]+$')"
+      - "valid_lines[1:] | select('match', '^[0-9]{8}$') | list | length >= 5"
+
+    fail_msg: "The TOTP variable does not meet the required structure."
+    success_msg: "The TOTP variable is valid."
+
+- name: Extract Google Authenticator secret key
+  ansible.builtin.set_fact:
+    google_secret_key: "{{ valid_lines[0] }}"
+
+# Capture scratch codes - this creates a var like
+# google_scratch_codes:
+#   - 21528074
+#   - 86134509
+#   - 79251446
+- name: Extract Google Authenticator scratch codes
+  ansible.builtin.set_fact:
+    google_scratch_codes: "{{ valid_lines | select('match', '^[0-9]{8}$') | list }}"
+
+# Create QR code
+- name: Create QR code for secret
+  ansible.builtin.command:
+    cmd: "/usr/bin/qrencode -m 3 -t UTF8 otpauth://totp/{{ google_auth_label }}?secret={{ google_secret_key }}&Issuer={{ google_auth_issuer }}"
+  register: google_auth_qrcode
+  changed_when: google_auth_qrcode == 0
+
+- name: Show Google Authenticator Secret
+  ansible.builtin.debug:
+    var: google_secret_key
+  when:
+    - debug | default(false)
+
+- name: Show Google Scratch codes for user {{ username }}
+  ansible.builtin.debug:
+    var: google_scratch_codes
+
+- name: Show QR Code for user {{ username }}
+  ansible.builtin.debug:
+    msg: "{{ google_auth_qrcode.stdout }}"

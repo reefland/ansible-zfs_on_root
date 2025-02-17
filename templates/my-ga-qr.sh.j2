@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+SECRET_FILE="{{ google_authenticator_secret_path }}"
+
+if [[ -f "${SECRET_FILE}" ]]; then
+  GOOGLE_SECRET=$(head -1 "${SECRET_FILE}")
+  LABEL=$(ping -H "$HOSTNAME" -c 1 | grep -oP 'PING \K[^ ]+'):"$USER"
+  echo "QR - ${LABEL}"
+  /usr/bin/qrencode -m 3 -t UTF8 otpauth://totp/"${LABEL}"?secret="${GOOGLE_SECRET}"&issuer={{ google_auth_issuer }}
+else
+  echo "Google Authenticator secret no longer exists: ${SECRET_FILE}"
+fi

@@ -20,7 +20,8 @@
     # 1 or 2 devices = single or mirror flags, 3 or more use raid flags
     - name: Create SWAP Partitions
       ansible.builtin.command:
-        cmd: "sgdisk {{ (disk_by_id | length | int > 2) | ternary(raidz_multi_disk_swap_flags, single_disk_or_mirror_swap_flags) }} {{ item }}"
+        cmd: "sgdisk {{ (disk_by_id | length | int > 2) |
+          ternary(raidz_multi_disk_swap_flags, single_disk_or_mirror_swap_flags) }} {{ item }}"
       register: cmd_output
       changed_when: cmd_output.rc == 0
       loop:

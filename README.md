@@ -1,4 +1,4 @@
-# ZFS on Root For Ubuntu 22.04 LTS
+# ZFS on Root For Ubuntu 24.04 LTS
 
 This Ansible role is my standardized ZFS on Root installation that I use as a base for all my systems.  Additional roles are applied on top of this to make the generic host a specialized Home Theater PC, Full Graphical Desktop, Kubernetes Cluster node, a headless Docker Server, etc...
 
@@ -27,17 +27,19 @@ Originally based on the [OpenZFS ZFS on Root](https://openzfs.github.io/openzfs-
 * Customized SSH Configuration Options
 * DropBear support for unlocking ZFS encrypted pool remotely
 * Support for Apt-Cacher-NG proxy for cached packages
+* Support for Google Authenticator MFA on SSH logins
 
 ---
 
 ## TL;DR
 
 * While this is a WORK IN PROGRESS, I've built many systems using various combinations.
-  * However not every combination has been tested.  If you find a problem, please open a GitHub issue in this repository.
+  * However not every combination has been tested.
+  * If you find a problem, please open a GitHub issue in this repository.
   * Review [known issues](README.md#known-issues) for workarounds.
 
 * This Ansible based process is intended to be used against bare-metal systems or virtual machines (just needs SSH access to get started).
-  * This is intended for initial installation ONLY, this is not for applying changes over time -- you should make those changes via some other playbook / change control system.
+  * Designed for initial installation ONLY, this is not for applying changes over time -- you should make those changes via some other playbook / change control system.
 * This process uses ENTIRE disk(s) and wipes partitions on the specified disks, any existing data on these partitions on the target system will be lost.
 * Review the `defaults/main.yml` to set temporary passwords,  non-root user account(s) and basic rules on boot partition sizes, swap partitions, etc.
 * Defaults to building a headless server environment, however a full graphical desktop can be enabled.
@@ -46,16 +48,16 @@ Originally based on the [OpenZFS ZFS on Root](https://openzfs.github.io/openzfs-
 
 ## Environments Tested
 
-* Ubuntu 22.04.x Live CD Boot on Bare Metal or within VirtualBox
+* Ubuntu 24.04.x Live CD Boot on Bare Metal or within VirtualBox
 
 ---
 
 ## Requirements
 
-* [Ansible](https://www.ansible.com/) (Built with Ansible Core 2.12 or newer)
-* [Ubuntu 22.04.x "Jammy" Live CD](https://ubuntu.com/download/desktop/) (22.04 LTS Desktop - DO NOT use server images)
+* [Ansible](https://www.ansible.com/) (Tested with Ansible Core 2.18)
+* [Ubuntu 24.04.x "Noble Numbat" Live CD](https://ubuntu.com/download/desktop/) (24.04 LTS Desktop - DO NOT use server images)
   * _NOTE: you can configure for command-line only server build even when using the desktop image._
-* Computers that have less than 2 GiB of memory run ZFS slowly. 4 GiB of memory is recommended for normal performance in basic workloads.
+* Computers that have less than 2 GiB RAM run ZFS slowly. 4 GiB of memory is recommended for normal performance in basic workloads.
 
 ## Caution
 
@@ -73,12 +75,24 @@ Originally based on the [OpenZFS ZFS on Root](https://openzfs.github.io/openzfs-
 
 * Can be themed and customized as well!
 
-**ZFSbootManager** allows you to select which "boot environment" to use, this can be a previous ZFS Snapshot. See [Project Home Page](https://github.com/zbm-dev/zfsbootmenu) for details.
+**ZFSbootManager** (ZBM) allows you to select which "Boot Environment" to use, this can be a previous ZFS Snapshot. See [Project Home Page](https://github.com/zbm-dev/zfsbootmenu) for details.
 
 ![ZFS Boot Menu Image](./docs/zfsbootmenu.png)
 
-* Can browses, clone and promote ZFS snapshots to new boot environments.
-* Snapshots will automatically be taken before each `apt` or `dpkg` update.
+* Use ZBM to browses, clone and promote ZFS snapshots to new boot environments.
+* NOTE: Snapshots will automatically be taken before each `apt` or `dpkg` update, you can use ZBM to boot from these snapshots should a patch make your system unbootable.
+
+```shell
+$ zfs list -t snapshot
+NAME                                      USED  AVAIL  REFER  M
+OUNTPOINT
+rpool/ROOT/ubuntu@base_install            810K      -  1.64G  -
+rpool/ROOT/ubuntu@apt_2024-12-20-082816     0B      -  1.65G  -
+rpool/ROOT/ubuntu@apt_2024-12-20-082817     0B      -  1.65G  -
+rpool/ROOT/ubuntu@apt_2024-12-20-082824   256K      -  1.65G  -
+rpool/ROOT/ubuntu@apt_2024-12-20-084427   426K      -  1.64G  -
+rpool/ROOT/ubuntu@apt_2024-12-20-085424  89.8M      -  1.65G  -
+```
 
 ---
 
@@ -120,9 +134,34 @@ When a computer is rebooted with ZFS native encryption enabled then someone need
 
 ## How do I set it up
 
+I use a pretty simple ansible directory structure:
+
+```bash
+$ tree 
+.
+├── ansible.cfg
+├── inventory
+│   └── hosts.yml
+├── roles
+└── zfs_on_root.yml
+```
+
+The `zfs_on_root.yml` is a simple `yaml` file used to call the role, which can look like this:
+
+```yaml
+---
+- name: ZFS on Root Ubuntu Installation
+  hosts: zfs_on_root_install
+  become: true
+  gather_facts: true
+
+  roles:
+    - role: zfs_on_root
+```
+
 ### Edit your inventory document
 
-I use a `yaml` format inventory file, you will have to adjust to whatever format you use.
+My `inventory/hosts.yml` file is a `yaml` formatted inventory file, you will have to adjust to whichever format you use.  Example:
 
 ```yaml
 
@@ -225,13 +264,16 @@ regular_user_accounts:
     full_name: "Richard Durso"
     groups: "adm,cdrom,dip,lpadmin,lxd,plugdev,sambashare,sudo"
     shell: "/bin/bash"
+    google_auth: true
 ```
 
 ### Additional Settings to Review
 
+* Review [Google Authenticator Settings](docs/google-authenticator.md)
 * Review [Computer Configuration Settings](docs/computer-config-settings.md)
 * Review [SWAP Partition Settings](docs/swap-partition-settings.md)
 * Review [Root Pool & Partition Settings](docs/root-partition-settings.md)
+* Review [Customize ZFS Datasets to Create](docs/zfs-datasets-to-create.md)
 * Review [ZFS Native Encryption Settings](docs/zfs-encryption-settings.md)
 * Review [Custom SSHD Configuration Settings](docs/custom-sshd-settings.md)
 * Review [DropBear Settings](docs/dropbear-settings.md)
@@ -248,9 +290,9 @@ There should be no reason to alter the configuration file `vars/main.yml` which 
 ### Prepare the Install Environment
 
 1. Boot the Ubuntu Live CD:
-    * Select option <button name="button">Try Ubuntu</button>.
+    * Select option `Try Ubuntu`.
     * Connect your system to the internet as appropriate (e.g. join your Wi-Fi network).
-    * Open a terminal within the Live CD environment - press <kbd>Ctrl</kbd> <kbd>Alt</kbd>-<kbd>T</kbd>.
+    * Open a terminal within the Live CD environment - press `Ctrl` `Alt`-`T`.
 
 2. Install and start the OpenSSH server in the Live CD environment (see helper script below):
 
@@ -330,19 +372,6 @@ ansible-playbook -i inventory.yml ./zfs_on_root.yml -l <remote_host_name>
 
 After a few minutes, if all goes well you will have a reasonably decent standardized configuring to be a base system ready to be used and modified for any other specific role.
 
-The `zfs_on_root.yml` is a simple yaml file used to call the role, which can look like this:
-
-```yaml
----
-- name: ZFS on Root Ubuntu Installation
-  hosts: zfs_on_root_install
-  become: true
-  gather_facts: true
-
-  roles:
-    - role: zfs_on_root
-```
-
 The first thing I do once this Playbook completes is apply the [Customized Message of the Day](https://github.com/reefland/ansible-motd-zfs-smartd) Ansible Playbook for a login screen with a bit of bling.
 
 ---
@@ -383,10 +412,10 @@ This is the list and order of execution for all tags defined for this playbook:
       - config_swap [not tested]
       - system_tweaks
       - first_boot_prep
-      - fix_mount_order
       - unmount_chroot
       - reboot_remote
       - create_regular_users
+      - install_google_auth
       - copy_ssh_keys_notice
       - install_dropbear
       - final_setup
@@ -404,8 +433,8 @@ A reasonable way to build a system in stages using a group of tags instead of ca
 --tags="create_filesystems, create_datasets, config_system, install_zfs"
 --tags="config_boot_fs, install_dracut, install_refind, install_syslinux"
 --tags="install_zfsbootmenu, config_swap, system_tweaks, first_boot_prep"
---tags="fix_mount_order, unmount_chroot, reboot_remote"
---tags="create_regular_users, copy_ssh_keys_notice, install_dropbear, final_setup, restart_remote_final"
+--tags="unmount_chroot, reboot_remote"
+--tags="create_regular_users, install_google_auth, copy_ssh_keys_notice, install_dropbear, final_setup, restart_remote_final"
 ```
 
 ### Skipping Tags

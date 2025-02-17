@@ -141,7 +141,7 @@
     - name: Prompt for ZFS Passphrase
       ansible.builtin.set_fact:
         passphrase: "{{ passphrase_prompt.user_input }}"
-        no_log: "{{ no_log_secrets }} | default(false) | bool"
+      no_log: "{{ no_log_secrets | default(false) | bool }}"
 
 - name: ZFS Passphrase Validation Block
   when:
@@ -183,8 +183,8 @@
     - name: Generate disk by-id for devices
       ansible.builtin.set_fact:
         disk_by_id: "{{ disk_devices |
-          map('extract', hostvars[inventory_hostname]['ansible_devices'], ['links', 'ids', 0]) | list |
-          map('regex_replace', '^(.*)', '/dev/disk/by-id/\\g<1>') | list }}"
+          map('extract', hostvars[inventory_hostname]['ansible_devices'], ['links', 'ids', 0]) |
+          list | map('regex_replace', '^(.*)', '/dev/disk/by-id/\\g<1>') | list }}"
 
     - name: Display disk by-id for disk_devices
       ansible.builtin.debug:
@@ -199,10 +199,12 @@
 
 # If somehow a single device, has been defined as mirror or raidz then fail.
 - name: Confirm single device root pool type defined correctly
-  ansible.builtin.fail:
-    msg: "ERROR: Root pool type cannot be type mirror/raidz/raidz2 with one device, fix it in zfs_on_root.yml - set_root_pool_type 1:"
+  ansible.builtin.assert:
+    that:
+      - root_pool_type == ""
+    fail_msg: "ERROR: Root pool type cannot be type mirror/raidz/raidz2 with one device,
+      fix it in defaults/main.yml - set_root_pool_type.1 to \"\" "
   when:
-    - not root_pool_type == ""
     - disk_by_id | length | int == 1
   tags:
     - always
@@ -212,10 +214,12 @@
 
 # If somehow 2 devices are not defined as a mirror then fail.
 - name: Confirm dual device boot pool type defined correctly
-  ansible.builtin.fail:
-    msg: "ERROR: Root pool must be type mirror with 2 devices, fix it in zfs_on_root.yml - correct set_root_pool_type 2:"
+  ansible.builtin.assert:
+    that:
+      - root_pool_type == "mirror"
+    fail_msg: "ERROR: Root pool type mirror with 2 devices,
+      fix it in defaults/main.yml - set_root_pool_type.2 to \"mirror\" "
   when:
-    - not root_pool_type == "mirror"
     - disk_by_id | length | int == 2
   tags:
     - always
@@ -225,11 +229,13 @@
 
 # If somehow raidz2 was specified and with less than 4 devices then fail
 - name: Confirm raidz2 device root pool type has more than 4 devices
-  ansible.builtin.fail:
-    msg: "ERROR: Root pool must have more than 4 devices to use raidz2, fix it in zfs_on_root.yml - correct set_boot_pool_type {{ disk_by_id | length | int }}:"
+  ansible.builtin.assert:
+    that:
+      - not disk_by_id | length | int < 4
+    fail_msg: "ERROR: Root pool must have more than 4 devices to use raidz2,
+      fix it in defaults/main.yml - set_root_pool_type.{{ disk_by_id | length | int }} to \"raidz\" "
   when:
     - root_pool_type == "raidz2"
-    - disk_by_id | length | int < 4
   tags:
     - always
 
@@ -238,14 +244,14 @@
 
   # If ROOT Pool is 3 or more devices and not mirror or raidz then fail
 - name: Confirm multiple device root type defined correctly
-  ansible.builtin.fail:
-    msg: >
-      "ERROR: Root pool must be type mirror or raidz with {{ disk_by_id | length | int }} devices,
-      fix it in zfs_on_root.yml - correct set_boot_pool_type {{ disk_by_id | length | int }}:"
+  ansible.builtin.assert:
+    that:
+      - (root_pool_type == "mirror") or
+        (root_pool_type == "raidz") or
+        (root_pool_type == "raidz2")
+    fail_msg: "ERROR: Root pool must be type mirror or raidz with {{ disk_by_id | length | int }} devices,
+      fix it in defaults/main.yml - set_root_pool_type.{{ disk_by_id | length | int }} to \"mirror\" or \"raidz\" "
   when:
-    - (root_pool_type != "mirror") and
-      (root_pool_type != "raidz") and
-      (root_pool_type != "raidz2")
     - disk_by_id|length|int > 2
   tags:
     - always
@@ -257,14 +263,15 @@
 # (IE a 5 way mirror not supported, should be a raidz or raidz2 or not used)
 
 - name: Confirm mirrored vdevs for root pool has even number of devices
-  ansible.builtin.fail:
-    msg: >
-      "ERROR: A mirror of more than 4 devices (mirrored vdevs) must use an even number of devices.
-      A {{ disk_by_id | length | int }} mirror is not supported, fix it in zfs_on_root.yml"
+  ansible.builtin.assert:
+    that:
+      - disk_by_id|length|int is even
+    fail_msg: "ERROR: A mirror of more than 4 devices (mirrored vdevs) must use an even number of devices.
+      A {{ disk_by_id | length | int }} device mirror is not supported, fix it in defaults/main.yml
+      - set_root_pool_type.{{ disk_by_id | length | int }} to \"raidz\" or \"raidz2\" "
   when:
     - root_pool_type == "mirror"
     - disk_by_id|length|int > 4
-    - disk_by_id|length|int is odd
   tags:
     - always
 
@@ -314,3 +321,48 @@
   tags:
     - always
     - apply_apt_proxy
+
+###############################################################################
+# [ ZFS LIVE CD Check]#########################################################
+# Make sure ZFS is currently installed and report ZFS version detected
+
+- name: Detect ZFS Version Installed on Live CD
+  tags:
+    - always
+  block:
+    - name: Confirm ZFS binary is available
+      ansible.builtin.stat:
+        path: "{{ zfs_package_binary_path }}"
+      register: zfs_binary_path_check
+
+    - name: Get ZFS package version
+      ansible.builtin.shell: # noqa command-instead-of-shell
+        cmd: |
+          set -o pipefail
+          {{ zfs_package_version_check_command }}
+      register: zfs_package_version
+      changed_when: zfs_package_version.rc == 0
+      when:
+        - zfs_binary_path_check.stat.isreg is defined and zfs_binary_path_check.stat.isreg
+
+    - name: Probe ZFS Module
+      ansible.builtin.command:
+        cmd: "modprobe zfs"
+      register: cmd_output
+      changed_when: cmd_output.rc == 0
+      when:
+        - zfs_binary_path_check.stat.isreg is defined and zfs_binary_path_check.stat.isreg
+
+    - name: Get ZFS Kernel Module version
+      ansible.builtin.command:
+        cmd: "{{ zfs_package_kernel_version_check_command }}"
+      register: zfs_module_version
+      changed_when: zfs_module_version.rc == 0
+      when:
+        - zfs_binary_path_check.stat.isreg is defined and zfs_binary_path_check.stat.isreg
+
+    - name: Display ZFS Versions Detected
+      ansible.builtin.debug:
+        msg: "ZFS Package {{ zfs_package_version.stdout }}, ZFS Module {{ zfs_module_version.stdout }}"
+      when:
+        debug | default(false)

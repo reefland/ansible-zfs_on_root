@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+SECRET_FILE="{{ google_authenticator_secret_path }}"
+
+if [[ ! -f "${SECRET_FILE}" ]]; then
+  LABEL=$(ping -H "$HOSTNAME" -c 1 | grep -oP 'PING \K[^ ]+'):"$USER"
+
+  /usr/bin/google-authenticator --time-based --disallow-reuse --label="${LABEL}" --qr-mode=UTF8 --rate-limit=3 --rate-time=30 --secret="${SECRET_FILE}" --window-size=3 --force --quiet
+  chmod 0400 "${SECRET_FILE}"
+
+  if [[ -f "${SECRET_FILE}" ]]; then
+    GOOGLE_SECRET=$(head -1 "${SECRET_FILE}")
+    if /usr/bin/qrencode -m 3 -t UTF8 otpauth://totp/"${LABEL}"?secret="${GOOGLE_SECRET}"&issuer={{ google_auth_issuer}}
+    then
+      echo
+      sleep 1
+      echo "Please make note of your 5 recovery codes:"
+      tail -5 "${SECRET_FILE}"
+    fi
+  fi
+else
+  echo "Google Authenticator secret already exists: ${SECRET_FILE}, use my-ga-qr.sh to view it."
+fi

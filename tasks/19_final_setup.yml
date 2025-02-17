@@ -33,7 +33,7 @@
         dest: /etc/netplan/01-network-manager-all.yaml
         owner: root
         group: root
-        mode: '0644'
+        mode: '0600'
 
 ###############################################################################
 # [ Disable IPv6 Networking ]##################################################
@@ -90,14 +90,16 @@
         msmtprc_mode: "0600"
 
     # Enable ZFS Email Notifications
-    - name: Modify syslinux-update.sh
+    - name: Modify ZFD for Email Notifications
       ansible.builtin.replace:
         path: "/etc/zfs/zed.d/zed.rc"
         regexp: '{{ find_values.regexp }}'
         replace: '{{ find_values.replace }}'
       loop:
-        - { regexp: '^ZED_EMAIL_ADDR.*', replace: 'ZED_EMAIL_ADDR="{{ msmtp.msmtp_alias_default }}"' }
-        - { regexp: '(^#)?ZED_EMAIL_OPTS.*', replace: 'ZED_EMAIL_OPTS="-s ''@SUBJECT@'' @ADDRESS@ -r {{ secret_msmtp_send_from_email }}"' }
+        - { regexp: '^ZED_EMAIL_ADDR.*',
+            replace: 'ZED_EMAIL_ADDR="{{ msmtp.msmtp_alias_default }}"' }
+        - { regexp: '(^#)?ZED_EMAIL_OPTS.*',
+            replace: 'ZED_EMAIL_OPTS="-s ''@SUBJECT@'' @ADDRESS@ -r {{ secret_msmtp_send_from_email }}"' }
       loop_control:
         loop_var: find_values
 
@@ -116,12 +118,8 @@
         validate: "/usr/sbin/sshd -t -f %s"
       loop: "{{ apply_sshd_settings | dict2items }}"
       register: update_sshd
-
-    - name: Restart SSHD Server
-      ansible.builtin.service:
-        name: sshd
-        state: restarted
-      when: update_sshd.changed
+      notify:
+        - Restart SSHD Server
 
 ###############################################################################
 # [ Final Setup ]##############################################################
@@ -171,7 +169,8 @@
       ansible.builtin.shell:
         cmd: |
           set -o pipefail
-          if grep -Eq '(^|[^#y])compress' {{ item.path }} ; then sed -i -r 's/(^|[^#y])(compress)/\\1#\\2/' {{ item.path }}; fi
+          if grep -Eq '(^|[^#y])compress' {{ item.path }} ; then
+          sed -i -r 's/(^|[^#y])(compress)/\\1#\\2/' {{ item.path }}; fi
       with_items: "{{ files_matched.files }}"
       register: cmd_output
       changed_when: cmd_output.rc == 0
@@ -182,8 +181,9 @@
     # If a base_install snapshot does not exist, create one
     - name: Create base_install snapshot
       ansible.builtin.shell:
-        cmd:
-          zfs get type {{ root_pool_dataset_path }}@base_install || zfs snapshot {{ root_pool_dataset_path }}@base_install
+        cmd: >
+          zfs get type {{ root_pool_dataset_path }}@base_install || zfs snapshot {{
+          root_pool_dataset_path }}@base_install
       register: cmd_output
       changed_when: cmd_output.rc == 0
 

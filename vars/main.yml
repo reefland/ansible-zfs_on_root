@@ -1,12 +1,39 @@
 ---
-# This configuration is designed to Ubuntu 22.04, it is not backward compatible to older versions.
-
-####### Nothing Below Here Needs to be Edited ############
+# This configuration is designed for Ubuntu 24.04, it is not backward compatible to older versions.
 
 # Ubuntu Release name
-ubuntu_release: "jammy"
+ubuntu_release: "noble"
 distro_name: "ubuntu"
-ubuntu_version: "22.04"
+ubuntu_version: "24.04"
+
+# Default Datasets to Create.  Uncommon ones have been commented out to reduce
+# the number of zfs datasets being managed.  The respective directories will
+# still be created as needed, they just will not be isolated zfs datasets.
+datasets_to_create:
+  # - "{{ root_pool_dataset_path }}/srv"
+  - "-o canmount=off {{ root_pool_dataset_path }}/usr"
+  - "{{ root_pool_dataset_path }}/usr/local"
+  - "-o canmount=off {{ root_pool_dataset_path }}/var"
+  - "-o com.sun:auto-snapshot=false {{ root_pool_dataset_path }}/var/cache"
+  # - "{{ root_pool_dataset_path }}/var/games"
+  - "-o canmount=off {{ root_pool_dataset_path }}/var/lib"
+  # - "{{ root_pool_dataset_path }}/var/lib/AccountsService"
+  # - "{{ root_pool_dataset_path }}/var/lib/apt"
+  # - "{{ root_pool_dataset_path }}/var/lib/dpkg"
+  - "-o com.sun:auto-snapshot=false {{ root_pool_dataset_path }}/var/lib/docker"
+  # - "{{ root_pool_dataset_path }}/var/lib/NetworkManager"
+  - "{{ root_pool_dataset_path }}/var/log"
+  # - "{{ root_pool_dataset_path }}/var/mail"
+  # - "{{ root_pool_dataset_path }}/var/snap"
+  # - "{{ root_pool_dataset_path }}/var/spool"
+  - "-o com.sun:auto-snapshot=false {{ root_pool_dataset_path }}/var/tmp"
+  # - "{{ root_pool_dataset_path }}/var/www"
+
+  # Home Directory Dataset will be kept outside of OS Dataset
+  - "-o canmount=on -o mountpoint=/home -o compression={{ zfs_compression }} -o atime=off {{ root_pool_home_dataset_path }}"
+  - "-o canmount=on -o mountpoint=/root {{ root_pool_home_dataset_path }}/root"
+
+############ Nothing Below Here Needs to be Edited ############
 
 # Define Partition Mapping
 boot_partition: "1"
@@ -48,7 +75,7 @@ root_pool_options:
   - "-O normalization=formD"
   - "-O relatime=on"
   - "-O xattr=sa"
-  - "-O mountpoint=/ -R {{ live_cd_mountpoint }} {{ root_pool_name }}"
+  - "-O mountpoint=none -R {{ live_cd_mountpoint }} {{ root_pool_name }}"
 
 # Define Root Pool Encryption Options
 root_pool_encryption_options:
@@ -73,29 +100,20 @@ root_dataset_options:
 
 root_pool_home_dataset_path: "{{ root_pool_name }}/ROOT/home"
 
-# Define Additional Datasets to Create
-datasets_to_create:
-  - "{{ root_pool_dataset_path }}/srv"
-  - "-o canmount=off {{ root_pool_dataset_path }}/usr"
-  - "{{ root_pool_dataset_path }}/usr/local"
-  - "-o canmount=off {{ root_pool_dataset_path }}/var"
-  - "-o com.sun:auto-snapshot=false {{ root_pool_dataset_path }}/var/cache"
-  - "{{ root_pool_dataset_path }}/var/games"
-  - "-o canmount=off {{ root_pool_dataset_path }}/var/lib"
-  - "{{ root_pool_dataset_path }}/var/lib/AccountsService"
-  - "{{ root_pool_dataset_path }}/var/lib/apt"
-  - "{{ root_pool_dataset_path }}/var/lib/dpkg"
-  - "-o com.sun:auto-snapshot=false {{ root_pool_dataset_path }}/var/lib/docker"
-  - "{{ root_pool_dataset_path }}/var/lib/NetworkManager"
-  - "{{ root_pool_dataset_path }}/var/log"
-  - "{{ root_pool_dataset_path }}/var/mail"
-  - "{{ root_pool_dataset_path }}/var/snap"
-  - "{{ root_pool_dataset_path }}/var/spool"
-  - "-o com.sun:auto-snapshot=false {{ root_pool_dataset_path }}/var/tmp"
-  - "{{ root_pool_dataset_path }}/var/www"
-  # Home Directory Dataset will be kept outside of OS Dataset
-  - "-o canmount=on -o mountpoint=/home -o compression={{ zfs_compression }} -o atime=off {{ root_pool_home_dataset_path }}"
-  - "-o canmount=on -o mountpoint=/root {{ root_pool_home_dataset_path }}/root"
+# ZFS Version Checks on LiveCD
+# Get version of installed zfs package, expected return value like "2.2.2-0ubuntu9.1"
+zfs_package_version_check_command: "dpkg -s zfsutils-linux | grep -F Version | cut -d' ' -f2"
+
+# Get version of zfs kernel module, expect return value like: "2.2.2-0ubuntu9"
+zfs_package_kernel_version_check_command: "cat /sys/module/zfs/version"
+
+# Expected location of zfs binary on Live CD
+zfs_package_binary_path: "/usr/sbin/zfs"
+
+# Use zswap compressed page cache in front of swap
+# https://wiki.archlinux.org/index.php/Zswap
+# Only used for swap partition (encrypted or not)
+zswap_config: "zswap.enabled=1 zswap.compressor=lz4 zswap.max_pool_percent=25"
 
 ###############################################################################
 # [ Variable below are unrelated to ZFS ]######################################
@@ -106,14 +124,38 @@ live_cd_mountpoint: "/mnt"
 # Define chroot command to use
 chroot_cmd: "chroot {{ live_cd_mountpoint }}"
 
+# Name of EFI mdadm raid device to use
+boot_dev_name: "/dev/md/efi"
+
+# Name of SWAP mdadm raid device to use
+swap_dev_name: "/dev/md/swap"
+
 # EFI Boot Mountpoint
 efi_boot_mountpoint: "/boot/efi"
 
 # Path for EFI directory
 efi_boot_path: "{{ efi_boot_mountpoint }}/EFI"
 
+# Fallback Path for EFI, copy refined_x64.efi to this path/name
+efi_fallback_path: "{{ efi_boot_mountpoint }}/EFI/boot/bootx64.efi"
+
 # Path for ZFSBootMenu
 zfs_boot_menu_path: "{{ efi_boot_path }}/zfsbootmenu"
+
+# ZFSBootMenu Repo holding KERNEL files
+zfs_boot_menu_repo: "zbm-dev/zfsbootmenu"
+
+# ZFSBootMenu Repo URL to Download KERNEL files
+zfs_boot_menu_repo_url: "https://github.com/{{ zfs_boot_menu_repo }}"
+
+# ZFSBootMenu version for KERNEL files
+zfs_boot_menu_version: "v2.3.0"
+
+# ZFSBootMenu Repo URL to Download Source files
+zfs_boot_menu_source_url: "https://get.zfsbootmenu.org/source"
+
+# Memtest 86 versions to install
+memtest86_syslinux_version: "4.3.7"
 
 # Path for rEFInd
 refind_path: "{{ efi_boot_path }}/refind"
@@ -137,17 +179,25 @@ packages_to_mark_hold:
   - "grub-efi-amd64-bin"
   - "grub-common"
   - "grub2-common"
-  - "lilo"
+  # - "lilo"  # No longer available in Ubuntu 24.04.1
 
 # Directory to check that UEFI firmware is available
 # This is required to be found if UEFI support is enabled
 efi_firmware_path: "/sys/firmware/efi"
+
+efi_firmware_vars_path: "{{ efi_firmware_path }}/efivars"
 
 # Location of sudoers include file which contains: ansible ALL=(ALL) NOPASSWD:ALL
 sudoers_include_file: "/etc/sudoers.d/99_sudo_include_file"
 
 # Name of SSH Installation Helper Script (to remove if found)
 ssh_installation_helper_script: "do_ssh.sh"
+
+# Google Authenticator secret filename
+google_authenticator_secret_name: ".google_authenticator"
+
+# Google Authenticator secret path
+google_authenticator_secret_path: "/home/$USER/.google_authenticator"
 
 # Comma Separated Device Number to include as possible "disk" devices
 # 8=[SATA, SCSI], 179=[MMC], 259=[NVMe]

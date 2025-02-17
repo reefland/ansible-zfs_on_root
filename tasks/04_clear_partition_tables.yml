@@ -16,7 +16,9 @@
     - name: Unmount any mdadm disks that might have been automounted and Stop all found mdadm arrays
       ansible.builtin.shell: |
         find /dev -iname md* -type b -exec bash -c \
-        "umount {} > /dev/null 2>&1 ; mdadm --stop --force {} > /dev/null 2>&1 ; mdadm --remove {} > /dev/null 2>&1" \;
+        "umount {} > /dev/null 2>&1 ;
+        mdadm --stop --force {} > /dev/null 2>&1 ;
+        mdadm --remove {} > /dev/null 2>&1" \;
       register: cmd_output
       changed_when:
         cmd_output.rc == 0
@@ -24,8 +26,8 @@
 
     - name: Remove ZFS labels from previous usage
       ansible.builtin.command:
-        cmd: "zpool labelclear -f {{ item }}-part3"
-        removes: "{{ item }}-part3"
+        cmd: "zpool labelclear -f {{ item }}-part{{ root_partition }}"
+        removes: "{{ item }}-part{{ root_partition }}"
       register: cmd_output
       changed_when:
         cmd_output.rc == 0
@@ -35,8 +37,8 @@
 
     - name: Wipe mdadm superblock from partitions
       ansible.builtin.command:
-        cmd: "mdadm --zero-superblock --force {{ item }}-part1"
-        removes: "{{ item }}-part1"
+        cmd: "mdadm --zero-superblock --force {{ item }}-part{{ boot_partition }}"
+        removes: "{{ item }}-part{{ boot_partition }}"
       register: cmd_output
       changed_when:
         cmd_output.rc == 0

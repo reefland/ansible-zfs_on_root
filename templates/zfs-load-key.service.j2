@@ -12,8 +12,8 @@ After=zfs-import.target
 ### to ensure a proper stop when missing keys.
 # OnFailure=emergency.target
 
-### For now, we only unlock the ROOT encryption dataset which will unlock any child
-### datasets under it by default from the ZFS-root.sh script
+### For now, we only unlock the ROOT/home encryption dataset which will unlock any child
+### datasets under it by default.
 ### If we do NOT specify the datasets here, then zfs-multi-mount.sh will try
 ### to unlock ALL encrypted datasets it finds.  For those without keys this can
 ### cause a delay until it times out.
@@ -21,7 +21,8 @@ After=zfs-import.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=zfs-multi-mount.sh --systemd {{ root_pool_name }}/ROOT
+
+ExecStart=/usr/bin/zfs-multi-mount.sh --systemd {{ root_pool_home_dataset_path }}
 
 [Install]
 WantedBy=zfs-mount.service

@@ -6,13 +6,33 @@
   tags:
     - install_refind
   block:
+
+    - name: Run chroot to mount EFI variables directory
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          EFIVARS_CNT=$(ls -1 {{ live_cd_mountpoint }}/{{ efi_firmware_vars_path }} | wc -l)
+          if [ ${EFIVARS_CNT} -eq 0 ] ; then
+            mount -t efivarfs efivarfs {{ live_cd_mountpoint }}/{{ efi_firmware_vars_path }}
+          fi
+      register: cmd_output
+      changed_when: cmd_output.rc == 0
+
+    - name: Run chroot command to mount /boot/efi directory
+      ansible.builtin.command:
+        cmd: "{{ chroot_cmd }} bash -c 'findmnt /boot/efi || mount {{ efi_boot_mountpoint }}'"
+      register: cmd_output
+      changed_when: cmd_output.rc == 0
+      args:
+        creates: "{{ efi_boot_path }}"
+
     - name: Run chroot command to install rEFInd Boot Manager
       ansible.builtin.command:
         cmd: "{{ chroot_cmd }} bash -c '{{ item }}'"
       register: cmd_output
       changed_when: cmd_output.rc == 0
       with_items:
-        - "DEBIAN_FRONTEND=noninteractive apt-get install --yes refind"
+        - "DEBIAN_FRONTEND=noninteractive apt-get --yes install refind efi-shell-x64"
         - "refind-install --yes"
         - "mkdir -p {{ zfs_boot_menu_path }}"
         - "mkdir -p {{ refind_path }}"
@@ -27,6 +47,15 @@
         group: "root"
         mode: "0644"
 
+    - name: Copy EUFI shell to EFI system
+      ansible.builtin.copy:
+        src: "{{ live_cd_mountpoint }}/usr/share/efi-shell-x64/shellx64.efi"
+        dest: "{{ live_cd_mountpoint }}/boot/efi/EFI/tools/shellx64.efi"
+        owner: "root"
+        group: "root"
+        mode: "0644"
+        remote_src: true
+
     # If we're running under legacy bios then rEFInd will be installed
     # to /boot/efi/EFI/BOOT - we want it in /boot/efi/EFI/refind
     - name: Run chroot command to Move rEFInd if under Legacy BIOS
@@ -35,7 +64,27 @@
       register: cmd_output
       changed_when: cmd_output.rc == 0
       with_items:
-        - "[ -e {{ efi_boot_path }}/BOOT ] && mvrefind {{ efi_boot_path }}/BOOT {{ refind_path }} || true"
+        - "[ -e {{ efi_boot_path }}/BOOT ] &&
+          mvrefind {{ efi_boot_path }}/BOOT {{ refind_path }} || true"
+
+    - name: Create directory {{ efi_fallback_path }}
+      ansible.builtin.file:
+        path: "{{ live_cd_mountpoint }}/{{ efi_boot_mountpoint }}/EFI/boot/"
+        state: directory
+        mode: "0755"
+      when:
+        - efi_fallback_enabled | default(false) | bool
+
+    - name: Copy EUFI fallback shell if needed
+      ansible.builtin.copy:
+        src: "{{ live_cd_mountpoint }}/boot/efi/EFI/refind/refind_x64.efi"
+        dest: "{{ live_cd_mountpoint }}/{{ efi_fallback_path }}"
+        owner: "root"
+        group: "root"
+        mode: "0644"
+        remote_src: true
+      when:
+        - efi_fallback_enabled | default(false) | bool
 
     - name: Reduce rEFIND boot menu timeout from 20 seconds to new value
       ansible.builtin.replace:
@@ -51,7 +100,7 @@
         group: "root"
         mode: "0644"
       with_items:
-        - { source: "logo.jpg", dest: "{{ refind_path }}/" }
+        - { source: "{{ refind_boot_menu_logo_filename }}", dest: "{{ refind_path }}/{{ refind_boot_menu_logo_filename }}" }
         - { source: "os_linux.png", dest: "{{ refind_path }}/icons/"}
       when:
         - refind_boot_menu_logo  | default(false)
@@ -68,7 +117,7 @@
       ansible.builtin.replace:
         path: "{{ live_cd_mountpoint }}{{ refind_path }}/refind.conf"
         regexp: '^#banner hostname.bmp(.*$)'
-        replace: 'banner logo.jpg'
+        replace: 'banner {{ refind_boot_menu_logo_filename }}'
       when:
         - refind_boot_menu_logo  | default(false)
 

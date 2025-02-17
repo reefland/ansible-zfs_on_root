@@ -8,6 +8,27 @@
   tags:
     - install_zfs
   block:
+
+    ###############################################################################
+
+    - name: Run chroot command for apt update
+      ansible.builtin.command:
+        cmd: "{{ chroot_cmd }} bash -c 'apt-get -qq update'"
+      register: cmd_output
+      changed_when: cmd_output.rc == 0
+
+    - name: Configure chroot Environment for ZFS installs
+      ansible.builtin.command:
+        cmd: "{{ chroot_cmd }} bash -c '{{ item }}'"
+      register: cmd_output
+      changed_when: cmd_output.rc == 0
+      with_items:
+        - "apt-get install --yes --no-install-recommends software-properties-common debconf-utils"
+        - "locale-gen --purge en_US.UTF-8 {{ locale_prefix }}"
+        - "update-locale LANG={{ locale_prefix }}"
+        - "dpkg-reconfigure --frontend noninteractive locales tzdata keyboard-configuration
+          console-setup"
+
     - name: Run chroot command for apt update
       ansible.builtin.command:
         cmd: "{{ chroot_cmd }} bash -c 'apt-get -qq update'"
@@ -22,11 +43,10 @@
       register: cmd_output
       changed_when: cmd_output.rc == 0
       with_items:
-        - "apt-get install --yes --no-install-recommends software-properties-common debconf-utils"
         - "apt-get install --yes --no-install-recommends
           {{ enable_ubuntu_lts_hwe | ternary('linux-generic-hwe-' + ubuntu_version + ' linux-headers-generic-hwe-'
           + ubuntu_version + ' linux-image-generic-hwe-' + ubuntu_version, 'linux-generic linux-headers-generic linux-image-generic') }}"
-        - "apt-get install --yes --no-install-recommends mdadm wget nano vim"
+        - "apt-get install --yes --no-install-recommends mdadm wget nano vim dosfstools"
         - "apt-get install --yes --no-install-recommends zfsutils-linux zfs-zed zfs-initramfs"
       when:
         - ansible_os_family == "Debian"

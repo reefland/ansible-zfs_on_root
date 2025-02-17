@@ -7,22 +7,19 @@
   tags:
     - config_boot_fs
   block:
-    # Create name of boot device
-    - name: Create name of boot device
-      ansible.builtin.set_fact:
-        boot_dev_name: "/dev/md/BOOT_EFI"
-
     # Create a list of device partitions to use
     - name: Create a list of device partitions to use
       ansible.builtin.set_fact:
-        mdadm_device_list: "{{ mdadm_device_list | default('') }} {{ item }}-part1"
+        mdadm_device_list: "{{ mdadm_device_list | default('') }} {{ item }}-part{{ boot_partition }}"
       loop:
         "{{ disk_by_id }}"
 
     - name: Unmount any mdadm disks that might have been automounted and Stop all found mdadm arrays
       ansible.builtin.shell: >
         find /dev -iname md* -type b -exec bash -c
-        "umount {} > /dev/null 2>&1 ; mdadm --stop --force {} > /dev/null 2>&1 ; mdadm --remove {} > /dev/null 2>&1" \;
+        "umount {} > /dev/null 2>&1 ;
+        mdadm --stop --force {} > /dev/null 2>&1 ;
+        mdadm --remove {} > /dev/null 2>&1" \;
       register: cmd_output
       changed_when:
         cmd_output.rc == 0
@@ -30,7 +27,7 @@
 
     - name: Wipe mdadm superblock from partitions
       ansible.builtin.command:
-        cmd: "mdadm --zero-superblock --force {{ item }}-part1"
+        cmd: "mdadm --zero-superblock --force {{ item }}-part{{ boot_partition }}"
       register: cmd_output
       changed_when:
         cmd_output.rc == 0
@@ -39,7 +36,7 @@
         "{{ disk_by_id }}"
 
     # The "-R" - is needed to suppress the "Continue creating array?" prompt
-    - name: Run chroot command to create mdadm device for multi-disk boot partition
+    - name: Run command to create mdadm device for multi-disk boot partition
       ansible.builtin.command:
         cmd: >
           mdadm --create {{ boot_dev_name }} --verbose -R --metadata=1.0 --force --level=mirror
@@ -49,11 +46,10 @@
       register: cmd_output
       changed_when: cmd_output.rc == 0
 
-    - name: Run chroot command to create mdadm.conf file multi-disk boot partition
-      ansible.builtin.command:
+    - name: Run command to create mdadm.conf file multi-disk boot partition
+      ansible.builtin.shell:
         cmd:
-          mdadm --examine --scan >> {{ live_cd_mountpoint }}/etc/mdadm/mdadm.conf
-        creates: "{{ boot_dev_name }}"
+          mdadm --examine --scan > {{ live_cd_mountpoint }}/etc/mdadm/mdadm.conf
       register: cmd_output
       changed_when: cmd_output.rc == 0
 
@@ -69,7 +65,7 @@
     # Create name of boot device
     - name: Create name of boot device
       ansible.builtin.set_fact:
-        boot_dev_name: "{{ disk_by_id[0] }}-part1"
+        boot_dev_name: "{{ disk_by_id[0] }}-part{{ boot_partition }}"
 
 ###############################################################################
 # [ Create Boot EFI Directory ]################################################
@@ -79,14 +75,6 @@
   tags:
     - config_boot_fs
   block:
-
-    - name: Run chroot command to install dosfstool
-      ansible.builtin.command:
-        cmd: "{{ chroot_cmd }} bash -c 'apt-get install --yes dosfstools'"
-      register: cmd_output
-      changed_when: cmd_output.rc == 0
-      when:
-        - ansible_os_family == "Debian"
 
     - name: Create EFI filesystem on boot device
       ansible.builtin.command:
@@ -113,7 +101,7 @@
     - name: Remove any existing /boot/efi references from fstab
       ansible.builtin.replace:
         path: "{{ live_cd_mountpoint }}/etc/fstab"
-        regexp: '(?m)^/dev/disk/by-uuid/.*/boot/efi.*\n?'
+        regexp: '(?m)^UUID.*/boot/efi.*\n?'
         replace: ''
 
     - name: Remove UNCONFIGURED message in /etc/fstab
@@ -125,8 +113,9 @@
     - name: Add EFI Filesystems to /etc/fstab
       ansible.builtin.shell:
         cmd: >
-          echo /dev/disk/by-uuid/$(blkid -s UUID -o value "{{ boot_dev_name }}")
-          /boot/efi vfat nofail,x-systemd.device-timeout=1,x-systemd.after=zfs-mount.service 0 1 >>"{{ live_cd_mountpoint }}/etc/fstab"
+          echo UUID=$(blkid -s UUID -o value "{{ boot_dev_name }}")
+          /boot/efi vfat nofail,x-systemd.device-timeout=1,x-systemd.after=zfs-mount.service 0 1
+          >>"{{ live_cd_mountpoint }}/etc/fstab"
       register: cmd_output
       changed_when: cmd_output.rc == 0
 
@@ -143,12 +132,5 @@
         var: cmd_output['stdout']
       when:
         debug | default(false)
-
-    # Mount /boot/efi directory in chroot environment
-    - name: Run chroot command to mount /boot/efi directory
-      ansible.builtin.command:
-        cmd: "{{ chroot_cmd }} bash -c 'mount {{ efi_boot_mountpoint }}'"
-      register: cmd_output
-      changed_when: cmd_output.rc == 0
 
 ###############################################################################

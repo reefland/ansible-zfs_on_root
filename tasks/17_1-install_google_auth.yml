@@ -1,0 +1,113 @@
+---
+# [ Install Google Authenticator ]#############################################
+- name: Install Google Authenticator
+  when:
+    - ansible_nodename != "localhost"
+  tags:
+    - install_google_auth
+  block:
+    # Loop through all defined users. If any have "google_auth: true" then
+    # install google authenticator pam module and configure the user for it.
+    - name: Check if any users have Google Authenticator enabled
+      ansible.builtin.set_fact:
+        google_auth_users: "{{ regular_user_accounts | selectattr('google_auth', 'equalto', true) }}"
+
+    - name: Debug Setup Google Authenticator for user
+      ansible.builtin.debug:
+        msg: "Setup Google Authenticator for user: {{ regular_user_accounts }}"
+      when:
+        - debug | default(false)
+
+    - name: Install google authenticator if users have it enabled
+      ansible.builtin.apt:
+        name: ['python3-qrcode', 'libpam-google-authenticator', 'qrencode']
+        state: present
+        install_recommends: false
+      when:
+        - google_auth_users | list | length > 0| default(false) | bool
+
+    - name: Loop and Setup Google Authenticator for each user
+      ansible.builtin.include_tasks: "99_setup_google_auth_user.yml"
+      when:
+        - google_auth_users | list | length > 0| default(false) | bool
+      loop: "{{ google_auth_users }}"
+      loop_control:
+        loop_var: setup_user
+
+    - name: Copy Google Authenticator Script templates
+      ansible.builtin.template:
+        src: "{{ item }}.j2"
+        dest: "/usr/local/bin/{{ item }}"
+        owner: root
+        group: root
+        mode: '0755'
+      with_items:
+        - "my-ga-qr.sh"
+        - "ga-create-config.sh"
+      when:
+        - google_auth_users | list | length > 0| default(false) | bool
+
+    - name: Configure PAM and SSHD for Google Authenticator
+      when:
+        - google_auth_users | list | length > 0| default(false) | bool
+      block:
+        # The nullok allows regular login if ~/.google_authenticator doesn't exist
+        # Putting at beginning of file means it will ask for token FIRST, then password
+        # This prevents someone from being able to attempt passwords until/unless they have token
+        - name: Set pam to use google authenticator for ssh
+          ansible.builtin.lineinfile:
+            path: /etc/pam.d/sshd
+            insertafter: BOF
+            line: 'auth required pam_google_authenticator.so {% if google_auth_nullok | default(true) %} nullok{% endif %}'
+            state: present
+
+        # Must have at least one SUCCESS answer - nullok makes sshd answer IGNORE
+        # Adding pam_permit to end ensure that sshd module will answer SUCCESS if nothing else does
+        # https://github.com/google/google-authenticator-libpam#nullok
+        - name: Set pam to use pam_permit if nullok is defined
+          ansible.builtin.lineinfile:
+            path: /etc/pam.d/sshd
+            insertafter: EOF
+            line: 'auth required pam_permit.so'
+            state: present
+          when: google_auth_nullok | default(true)
+
+        - name: Instruct PAM to prompt for a password by default
+          ansible.builtin.replace:
+            path: "/etc/pam.d/sshd"
+            regexp: '^#.*@include common-auth'
+            replace: '@include common-auth'
+
+        - name: Force Google Authenticator ssh-key sessions
+          when:
+            - google_auth_force | default(false)
+            - google_auth_users | list | length > 0| default(false) | bool
+          block:
+            - name: Modify sshd_config to force use of google authenticator
+              ansible.builtin.copy:
+                dest: /etc/ssh/sshd_config.d/71-google_auth.conf
+                content: |
+                  #
+                  # For google authenticator to force use of token always
+                  #
+                  PasswordAuthentication no
+                  AuthenticationMethods publickey,password publickey,keyboard-interactive
+                mode: '0644'
+
+            - name: Instruct PAM to not prompt for a password
+              ansible.builtin.replace:
+                path: "/etc/pam.d/sshd"
+                regexp: '^@include common-auth'
+                replace: '#@include common-auth'
+
+        - name: Modify sshd_config to use google authenticator
+          ansible.builtin.copy:
+            dest: /etc/ssh/sshd_config.d/70-google_auth.conf
+            content: |
+              #
+              # For google authenticator
+              #
+              KbdInteractiveAuthentication yes
+            mode: '0644'
+          when:
+            - google_auth_users | list | length > 0| default(false) | bool

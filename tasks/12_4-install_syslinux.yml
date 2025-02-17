@@ -22,7 +22,8 @@
 
     - name: Run chroot command to install the syslinux GPTMBR data on each disk device
       ansible.builtin.command:
-        cmd: "{{ chroot_cmd }} bash -c 'dd bs=440 count=1 conv=notrunc if=/usr/lib/syslinux/mbr/gptmbr.bin of={{ item }}'"
+        cmd: "{{ chroot_cmd }} bash -c
+          'dd bs=440 count=1 conv=notrunc if=/usr/lib/syslinux/mbr/gptmbr.bin of={{ item }}'"
       register: cmd_output
       changed_when:
         cmd_output.rc == 0
@@ -38,6 +39,6 @@
         group: "root"
         mode: "0644"
       with_items:
-        - { source: "logo_sm.jpg", dest: "{{ syslinx_path }}/" }
+        - { source: "{{ syslinux_boot_menu_logo_filename }}", dest: "{{ syslinx_path }}/" }
       when:
         - refind_boot_menu_logo  | default(false)

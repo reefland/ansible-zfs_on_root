@@ -8,7 +8,7 @@
 
     - name: Install Dracut-Network and Dropbear
       ansible.builtin.apt:
-        name: ['dracut-network', 'dropbear-bin']
+        name: ['dracut-network', 'dropbear-bin', 'isc-dhcp-client']
         state: present
       when:
         - ansible_os_family == "Debian"
@@ -25,12 +25,18 @@
         mode: "0755"
 
     - name: Fetch dracut-crypt-ssh repository tarball
-      ansible.builtin.shell: |
-        set -o pipefail
-        cd /tmp/dracut-crypt-ssh
-        curl -L https://github.com/dracut-crypt-ssh/dracut-crypt-ssh/tarball/master | tar xz --strip=1
-      register: cmd_output
-      changed_when: cmd_output.rc == 0
+      ansible.builtin.get_url:
+        url: "https://github.com/dracut-crypt-ssh/dracut-crypt-ssh/tarball/master"
+        dest: "/tmp/dracut-crypt-ssh/dracut-crypt-ssh-dracut-crypt-ssh.tar.gz"
+        mode: "440"
+
+    - name: Extract dracut-crypt-ssh tarball
+      ansible.builtin.unarchive:
+        src: "/tmp/dracut-crypt-ssh/dracut-crypt-ssh-dracut-crypt-ssh.tar.gz"
+        dest: "/tmp/dracut-crypt-ssh"
+        remote_src: yes  # noqa yaml[truthy]
+        extra_opts:
+          - --strip=1
 
     # Comment out all lines containing: inst "$moddir"/helper/
     - name: Modify dracut module module-setup.sh
@@ -66,8 +72,6 @@
       register: cmd_output
       changed_when: cmd_output.rc == 0
       with_items:
-        # The dropbear.conf will look for these 3 keys
-        - "rsa"
         - "ecdsa"
         - "ed25519"
 
@@ -95,7 +99,8 @@
       ansible.builtin.lineinfile:
         path: "/etc/cmdline.d/dracut-network.conf"
         regexp: '(^.*ip=.*$)'
-        line: 'ip={{ apply_dropbear_settings.remoteaccess_ip }}:::{{ apply_dropbear_settings.remoteaccess_netmask }}:::none rd.neednet=1 rd.break'
+        line: 'ip={{ apply_dropbear_settings.remoteaccess_ip }}:::{{
+          apply_dropbear_settings.remoteaccess_netmask }}:::none rd.neednet=1 rd.break'
         create: true
         mode: "0644"
         state: present
@@ -103,14 +108,68 @@
       when:
         - apply_dropbear_settings.remoteaccess_ip_config == "static"
 
+    - name: Create /etc/zfsbootmenu/dracut.conf.d directory
+      ansible.builtin.file:
+        path: "/etc/zfsbootmenu/dracut.conf.d"
+        state: directory
+        mode: "0755"
+
+    # [ Setup Dracut Networking when NOT using Dropbear]#######################
+    - name: Configure Dracut Network without Dropbear
+      ansible.builtin.lineinfile:
+        path: "/etc/zfsbootmenu/dracut.conf.d/network.conf"
+        line: 'install_items+=" /etc/cmdline.d/dracut-network.conf "'
+        create: true
+        mode: "0644"
+        state: present
+        backup: true
+      when:
+        - not enable_dropbear_support | default(false) | bool
+
+    # With rd.neednet=1 it will fail to boot if no network available
+    # This can be a problem with laptops and docking stations, if the dock
+    # is not connected (no ethernet) it can fail to boot. Setting to 1 really
+    # only needed with for Dropbear support
+    - name: Create file /etc/cmdline.d/dracut-network.conf for DHCP
+      ansible.builtin.lineinfile:
+        path: "/etc/cmdline.d/dracut-network.conf"
+        regexp: '(^.*ip=.*$)'
+        line: 'ip={{ apply_dropbear_settings.remoteaccess_ip_config }} rd.neednet=0'
+        create: true
+        mode: "0644"
+        state: present
+        backup: true
+      when:
+        - not apply_dropbear_settings.remoteaccess_ip_config == "static"
+        - not enable_dropbear_support | default(false) | bool
+
+    # With rd.neednet=1 it will fail to boot if no network available
+    # This can be a problem with laptops and docking stations, if the dock
+    # is not connected (no ethernet) it can fail to boot. Setting to 1 really
+    # only needed with for Dropbear support
+    - name: Create file /etc/cmdline.d/dracut-network.conf for Static IP
+      ansible.builtin.lineinfile:
+        path: "/etc/cmdline.d/dracut-network.conf"
+        regexp: '(^.*ip=.*$)'
+        line: 'ip={{ apply_dropbear_settings.remoteaccess_ip }}:::{{
+          apply_dropbear_settings.remoteaccess_netmask }}:::none rd.neednet=0 rd.break'
+        create: true
+        mode: "0644"
+        state: present
+        backup: true
+      when:
+        - apply_dropbear_settings.remoteaccess_ip_config == "static"
+        - not enable_dropbear_support | default(false) | bool
+
     # [ Add Banner to Dropbear connection ]####################################
+
     - name: Copy dracut network banner to /etc/zfsbootmenu/dracut.conf.d/banner.txt
       ansible.builtin.template:
         src: dracut_banner.txt.j2
         dest: "/etc/zfsbootmenu/dracut.conf.d/banner.txt"
         owner: "root"
         group: "root"
-        mode: "0755"
+        mode: "0644"
 
     - name: Add network banner to dropbear startup parameters
       ansible.builtin.replace:
@@ -138,9 +197,23 @@
         mode: "0644"
 
     - name: Run Dracut Generate
-      ansible.builtin.shell: |
-        dracut -f --regenerate-all
-        sleep 2
-        generate-zbm --debug
+      ansible.builtin.command:
+        cmd: "dracut -f --regenerate-all"
       register: cmd_output
       changed_when: cmd_output.rc == 0
+
+    - name: Run Generate ZFSBootMenu
+      ansible.builtin.command:
+        cmd: "generate-zbm --debug"
+      register: cmd_output
+      changed_when: cmd_output.rc == 0
+      when:
+        - zfs_boot_menu_compile | default(false) | bool
+
+    - name: Update Syslinux when not using EFI
+      ansible.builtin.command:
+        cmd: "/boot/efi/syslinux-update.sh"
+      register: cmd_output
+      changed_when: cmd_output.rc == 0
+      when:
+        - efi_firmware_directory.stat.isdir is undefined

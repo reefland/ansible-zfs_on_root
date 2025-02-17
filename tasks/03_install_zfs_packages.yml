@@ -39,10 +39,18 @@
   block:
     - name: Install ZFS packages (assumes Live CD Environment)
       ansible.builtin.apt:
-        name: ['debootstrap', 'gdisk', 'zfs-initramfs', 'dosfstools', 'mdadm']
+        name:
+          - debootstrap
+          - gdisk
+          - zfs-initramfs
+          - dosfstools
+          - mdadm
+          - software-properties-common
+          - debconf-utils
         state: present
         update_cache: true
         cache_valid_time: 3600
+        install_recommends: false
 
     - name: Stop ZED Service
       ansible.builtin.systemd:

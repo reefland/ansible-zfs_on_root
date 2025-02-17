@@ -6,16 +6,27 @@
   tags:
     - system_tweaks
   block:
-    - name: Setup /tmp to use tmpfs
-      ansible.builtin.copy:
-        src: "{{ live_cd_mountpoint }}/usr/share/systemd/tmp.mount"
-        dest: "{{ live_cd_mountpoint }}/etc/systemd/system/tmp.mount"
-        mode: "0644"
-        remote_src: true
 
-    - name: Run chroot command enable /tmp
+    - name: If enabled set ZFS import delay in /etc/default/zfs
+      ansible.builtin.blockinfile:
+        path: "{{ live_cd_mountpoint }}/etc/default/zfs"
+        marker: "# Added by Ansible Initial install"
+        block: |
+          ZFS_INITRD_POST_MODPROBE_SLEEP='10'
+          ZFS_INITRD_PRE_MOUNTROOT_SLEEP='10'
+      when:
+        - zfs_pool_import_delay_enabled | default( false) | bool
+
+    # - name: Setup /tmp to use tmpfs
+    #   ansible.builtin.copy:
+    #     src: "{{ live_cd_mountpoint }}/usr/share/systemd/tmp.mount"
+    #     dest: "{{ live_cd_mountpoint }}/etc/systemd/system/tmp.mount"
+    #     mode: "0644"
+    #     remote_src: true
+
+    - name: Run chroot command enable tmpfs on /tmp
       ansible.builtin.command:
-        cmd: "{{ chroot_cmd }} bash -c 'systemctl enable tmp.mount'"
+        cmd: "{{ chroot_cmd }} bash -c 'systemctl enable /usr/share/systemd/tmp.mount'"
       register: cmd_output
       changed_when: cmd_output.rc == 0
 
@@ -37,7 +48,8 @@
 
     - name: Run chroot command to install basic applications
       ansible.builtin.command:
-        "{{ chroot_cmd }} bash -c 'apt-get install --yes openssh-server avahi-daemon libnss-mdns python3 python3-apt'"
+        "{{ chroot_cmd }} bash -c
+        'apt-get install --yes openssh-server avahi-daemon libnss-mdns python3 python3-apt'"
       register: cmd_output
       changed_when: cmd_output.rc == 0
       when:
