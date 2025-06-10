@@ -49,7 +49,7 @@ fi
 ## Enable SFTP Server for Ansible File Transfers
 sudo sh -c 'echo "Subsystem       sftp    /usr/lib/openssh/sftp-server" >> /etc/ssh/sshd_config.d/sftp-server'
 sudo systemctl daemon-reload
-sudo systemctl restart sshd
+sudo systemctl restart ssh
 
 # Disable swap partitions, we don't want them in use when partitions are removed.
 sudo swapoff -a
