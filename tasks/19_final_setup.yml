@@ -165,15 +165,12 @@
         patterns: "*"
       register: files_matched
 
-    - name: Switch to ZFS Log Compression
-      ansible.builtin.shell:
-        cmd: |
-          set -o pipefail
-          if grep -Eq '(^|[^#y])compress' {{ item.path }} ; then
-          sed -i -r 's/(^|[^#y])(compress)/\\1#\\2/' {{ item.path }}; fi
+    - name: Disable the log compression in each file so ZFS does the Log Compression
+      ansible.builtin.replace:
+        path: "{{ item.path }}"
+        regexp: (^|[^#y])(compress)
+        replace: '\1#\2'
       with_items: "{{ files_matched.files }}"
-      register: cmd_output
-      changed_when: cmd_output.rc == 0
       loop_control:
         label: "{{ item.path }}"
 
