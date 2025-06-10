@@ -39,7 +39,7 @@ then
 fi
 
 # install SSH Server and Python to allow ansible to connect
-if ! sudo apt-get --no-install-recommends --yes -o Dpkg::Options::="--force-confold" install openssh-server vim python3 python3-apt mdadm
+if ! sudo apt-get --no-install-recommends --yes -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install openssh-server vim python3 python3-apt mdadm
 then
   echo
   echo "ERROR: while installing required packages (apt install), unable to continue."
