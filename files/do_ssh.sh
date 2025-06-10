@@ -9,8 +9,9 @@ ANSIBLE_USER=ansible
 # Create ansible account and a home directory to store SSH keys
 echo
 echo "-----------------------------------------------------------------------------"
-sudo useradd -m $ANSIBLE_USER
-if [[ $? -ne 0 ]]; then 
+
+if ! sudo useradd -m $ANSIBLE_USER
+then 
   echo ERROR: was unable to add $ANSIBLE_USER user, already created?
 else
   echo Created user: $ANSIBLE_USER
@@ -20,8 +21,8 @@ fi
 sudo bash -c "echo \"$ANSIBLE_USER ALL=(ALL) NOPASSWD:ALL\" >> /etc/sudoers.d/99_sudo_include_file"
 
 # Validate sudoers file update
-sudo visudo -cf /etc/sudoers.d/99_sudo_include_file
-if [[ $? -ne 0 ]]; then 
+if ! sudo visudo -cf /etc/sudoers.d/99_sudo_include_file
+then 
   #Must return:   /etc/sudoers.d/99_sudo_include_file: parsed OK
   echo
   echo "ERROR: sudoers validation failed, something went wrong updating sudoers file."
@@ -30,25 +31,21 @@ if [[ $? -ne 0 ]]; then
 fi
 
 # Updated package repositories
-sudo apt-get -qq update
-if [[ $? -ne 0 ]]; then
+if ! sudo apt-get -qq update
+then
   echo
   echo "ERROR: while updating package repositories (apt update), unable to continue."
   exit
 fi
 
 # install SSH Server and Python to allow ansible to connect
-sudo apt-get --no-install-recommends --yes install openssh-server vim python3 python3-apt mdadm
-if [[ $? -ne 0 ]]; then
+
+if ! sudo apt-get --no-install-recommends --yes install openssh-server vim python3 python3-apt mdadm
+then
   echo
   echo "ERROR: while installing required packages (apt install), unable to continue."
   exit
 fi
-
-## Enable SFTP Server for Ansible File Transfers
-sudo sh -c 'echo "Subsystem       sftp    /usr/lib/openssh/sftp-server" >> /etc/ssh/sshd_config.d/sftp-server'
-sudo systemctl daemon-reload
-sudo systemctl restart ssh
 
 # Disable swap partitions, we don't want them in use when partitions are removed.
 sudo swapoff -a
@@ -67,8 +64,9 @@ if [[ ! -p /dev/stdin ]]; then
   echo "When installation is complete, the Ansible account will be password disabled,"
   echo "Only SSH key based login will be allowed."
   echo
-  sudo passwd $ANSIBLE_USER
-  while [ $? -ne 0 ]; do
+  
+  while ! sudo passwd $ANSIBLE_USER
+  do
       echo
       sleep 1
       sudo passwd $ANSIBLE_USER
