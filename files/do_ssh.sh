@@ -39,12 +39,17 @@ then
 fi
 
 # install SSH Server and Python to allow ansible to connect
-if ! sudo apt-get --no-install-recommends --yes -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install openssh-server vim python3 python3-apt mdadm
+if ! sudo DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends --yes install openssh-server vim python3 python3-apt mdadm
 then
   echo
   echo "ERROR: while installing required packages (apt install), unable to continue."
   exit
 fi
+
+## Enable SFTP Server for Ansible File Transfers
+sudo sh -c 'echo "Subsystem       sftp    /usr/lib/openssh/sftp-server" >> /etc/ssh/sshd_config.d/sftp-server'
+sudo systemctl daemon-reload
+sudo systemctl restart ssh
 
 # Disable swap partitions, we don't want them in use when partitions are removed.
 sudo swapoff -a
