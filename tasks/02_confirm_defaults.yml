@@ -43,6 +43,7 @@
                      Time Zone: {{ timezone_value }}
 
         Disk Devices Specified: {{ disk_by_id | length }}
+                  Disk Devices: {{ disk_by_id | map('replace', '/dev/disk/by-id/', '') | join(', ') }}
            ZFS Package Version: {{ zfs_package_version.stdout | default('unknown') }}, ZFS Module: {{ zfs_module_version.stdout | default('unknown') }}
             ZFS Root Pool Name: {{ root_pool_name
               }}  {% if disk_by_id | length | int > 1 %}Type: {{ root_pool_type
