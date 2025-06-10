@@ -156,7 +156,7 @@ The `zfs_on_root.yml` is a simple `yaml` file used to call the role, which can l
   gather_facts: true
 
   roles:
-    - role: zfs_on_root
+    - role: ansible-zfs_on_root
 ```
 
 ### Edit your inventory document
@@ -265,6 +265,38 @@ regular_user_accounts:
     groups: "adm,cdrom,dip,lpadmin,lxd,plugdev,sambashare,sudo"
     shell: "/bin/bash"
     google_auth: true
+```
+
+### Define Secrets File
+
+Rename file `vars/secrets/main.yml.example` to `vars/secrets/main.yml`.  Update as necessary to define your secrets such as:
+
+```yaml
+# [MSMTP Mailer SMTP Configuration Secrets ]###################################
+# Define Email Address system alerts will be FROM
+secret_msmtp_send_from_email: "monitoring@example.com"
+
+# Define Default Email Address to send alerts TO
+secret_msmpt_send_to_email: "admin@example.com"
+
+# Define user name to authenticate to SMTP Server with
+secret_msmtp_auth_user: "monitoring@example.com"
+
+# Define password for user to authenticate to SMTP Server with
+secret_msmtp_auth_password: "smtp!password"
+
+###############################################################################
+```
+
+NOTE: If you forget to create the secrets file ansible will fail with a message like:
+
+```shell
+TASK [ansible-zfs_on_root : Include Secret Files] **********************************************************************************
+
+failed: [host.example.com] (item=None) => changed=false
+  censored: 'the output has been hidden due to the fact that ''no_log: true'' was specified for this result'
+fatal: [host.example.com]: FAILED! => changed=false
+  censored: 'the output has been hidden due to the fact that ''no_log: true'' was specified for this result'
 ```
 
 ### Additional Settings to Review
