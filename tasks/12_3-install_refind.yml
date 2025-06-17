@@ -67,7 +67,7 @@
         - "[ -e {{ efi_boot_path }}/BOOT ] &&
           mvrefind {{ efi_boot_path }}/BOOT {{ refind_path }} || true"
 
-    - name: Create directory {{ efi_fallback_path }}
+    - name: Create EFI fallback directory
       ansible.builtin.file:
         path: "{{ live_cd_mountpoint }}/{{ efi_boot_mountpoint }}/EFI/boot/"
         state: directory
@@ -75,7 +75,7 @@
       when:
         - efi_fallback_enabled | default(false) | bool
 
-    - name: Copy EUFI fallback shell if needed
+    - name: Copy rEFInd fallback shell if enabled
       ansible.builtin.copy:
         src: "{{ live_cd_mountpoint }}/boot/efi/EFI/refind/refind_x64.efi"
         dest: "{{ live_cd_mountpoint }}/{{ efi_fallback_path }}"
