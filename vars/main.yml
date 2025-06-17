@@ -149,7 +149,7 @@ zfs_boot_menu_repo: "zbm-dev/zfsbootmenu"
 zfs_boot_menu_repo_url: "https://github.com/{{ zfs_boot_menu_repo }}"
 
 # ZFSBootMenu version for KERNEL files
-zfs_boot_menu_version: "v2.3.0"
+zfs_boot_menu_version: "v3.0.1"
 
 # ZFSBootMenu Repo URL to Download Source files
 zfs_boot_menu_source_url: "https://get.zfsbootmenu.org/source"
