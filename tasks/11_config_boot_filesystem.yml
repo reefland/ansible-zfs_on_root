@@ -36,6 +36,7 @@
         "{{ disk_by_id }}"
 
     # The "-R" - is needed to suppress the "Continue creating array?" prompt
+    # EFI boot mirror needs to be created with metadata version 1.0
     - name: Run command to create mdadm device for multi-disk boot partition
       ansible.builtin.command:
         cmd: >
