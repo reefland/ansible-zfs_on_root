@@ -24,6 +24,48 @@ By default rEFInd boot menu will wait 20 seconds for you take make a section.  T
 refind_boot_menu_timeout: "10"
 ```
 
+## rEFInd Boot Menu Logo / Background
+
+By default the rEFInd boot menu configuration will enable a logo or custom background to be displayed.
+
+```yaml
+# Enables background image for refind / syslinux
+refind_boot_menu_logo: true
+```
+
+An image can be specified for both UEFI or Syslinx (legacy) booting.  Two default images are provided. There are restrictions on format and size you need tro research if you want to change these.
+
+```yaml
+# Needs to be a JPG or PNG file.
+refind_boot_menu_logo_filename: "ubuntu-style.png"
+
+# Needs to be a JPG or PNG file at 640x48 for syslinux.
+syslinux_boot_menu_logo_filename: "ubuntu-style-sm.png"
+```
+
+## ZFS Boot Menu Compile
+
+Use the ZFSBootMenu Kernel binary or build from source? The Kernel binary does not enable networking support and is not compatible with Dropbear for entering ZFS encryption passwords.
+
+The default value is set to the same value for Dropbear enabled or not.
+
+```yaml
+# Default: if "enable_dropbear_support" is true then "zfs_boot_menu_compile"
+# is true.
+zfs_boot_menu_compile: "{{ enable_dropbear_support }}"
+
+```
+
+## EFI Fallback
+
+Required with some buggy UEFI BIOS which are hard coded to only look for a specific UEFI name such as `bootx64.efi` and do nt allow alternate names or locations. All my Minisforum computers have this limitation.
+
+When enabled a copy of `refind_x64.efi` will be copied to `bootx64.efi` location.
+
+```yaml
+efi_fallback_enabled: false
+```
+
 ## CLI or Full Desktop
 
 Select if full graphical desktop or command-line server only.
