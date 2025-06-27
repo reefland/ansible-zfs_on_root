@@ -1,0 +1,11 @@
+[Unit]
+Description=Add IP address(es) to /etc/issue
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart={{ user_local_bin_path}}/showip.sh
+RemainAfterExit=true
+
+[Install]
+WantedBy=multi-user.target

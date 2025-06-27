@@ -1,0 +1,34 @@
+---
+# [ Add showip.service to update TTY screen ]##################################
+- name: Add showip.service to update TTY screen
+  when:
+    - ansible_nodename != "localhost"
+  tags:
+    - add_showip_service
+  block:
+    - name: Copy Show IP Script template
+      ansible.builtin.template:
+        src: "{{ item }}.j2"
+        dest: "{{ user_local_bin_path }}/{{ item }}"
+        owner: root
+        group: root
+        mode: '0755'
+      with_items:
+        - "showip.sh"
+
+    - name: Copy Show IP Script Service template
+      ansible.builtin.template:
+        src: "{{ item }}.j2"
+        dest: "{{ systemd_service_path }}/{{ item }}"
+        owner: root
+        group: root
+        mode: '0644'
+      with_items:
+        - "showip.service"
+
+    - name: Enable Show IP service
+      ansible.builtin.systemd:
+        name: "{{ item }}"
+        enabled: true
+      with_items:
+        - "showip.service"

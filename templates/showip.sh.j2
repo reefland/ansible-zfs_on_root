@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# Creates a normal /etc/issue file but populates the bottom with a list
+# of all network interfaces found. The /4{} gets filled in with IPv4 addresses
+# as they are obtained, so the splash screen is always live with correct info
+# Exclude lo, virtual and docker interfaces - they're just messy
+
+echo -e "$(lsb_release -d -s) \\\n \l\n" > /etc/issue
+echo "$(ls -1 /sys/class/net | grep -E -v 'lo|vir|docker|tap|veth|br-|zt?' | xargs -I {} echo '   {} : \4{{}}')" >> /etc/issue
+echo "" >> /etc/issue
