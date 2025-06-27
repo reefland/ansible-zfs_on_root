@@ -183,5 +183,7 @@
           root_pool_dataset_path }}@base_install
       register: cmd_output
       changed_when: cmd_output.rc == 0
+      when:
+        - take_base_install_snapshot | default(false) | bool
 
 ###############################################################################
