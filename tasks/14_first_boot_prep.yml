@@ -190,7 +190,7 @@
       register: cmd_output
       changed_when: cmd_output.rc == 0
       with_items:
-        - "/boot/efi/syslinux-update.sh"
+        - "{{ efi_boot_mountpoint }}/syslinux-update.sh"
       when:
         - efi_firmware_directory.stat.isdir is undefined
 
