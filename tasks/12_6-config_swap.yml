@@ -153,7 +153,6 @@
         cmd: "{{ chroot_cmd }} bash -c 'apt install --yes cryptsetup'"
       register: cmd_output
       changed_when: cmd_output.rc == 0
-
       when:
         - ansible_os_family == "Debian"
 
