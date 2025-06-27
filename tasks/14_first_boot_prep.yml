@@ -128,16 +128,17 @@
         mode: "0640"
       with_items:
         - "{{ live_cd_mountpoint }}/etc/skel/.bash_aliases"
-        - "{{ live_cd_mountpoint }}/root/.bashrc"
+        - "{{ live_cd_mountpoint }}/root/.bash_aliases"
 
-    - name: Add nicer PS1 ROOT prompt
-      ansible.builtin.lineinfile: # noqa yaml[line-length]
-        path: "{{ live_cd_mountpoint }}/root/.bashrc"
-        line: >
-          PS1="\[\033[01;37m\]\[\033[01;41m\]\u@\[\033[00m\]\[$(tput bold)\]\[$(tput
-          setaf 5)\]\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]$ "
-        state: present
-        backup: true
+    - name: Copy root bashrc file to specified locations
+      ansible.builtin.template:
+        src: root_bashrc.j2
+        dest: "{{ item }}"
+        owner: "root"
+        group: "root"
+        mode: "0644"
+      with_items:
+        - "{{ live_cd_mountpoint }}/root/.bashrc"
 
     # Update ZFS Encryption Key Location
     - name: Run chroot commands Update ZFS Encryption Key Location
