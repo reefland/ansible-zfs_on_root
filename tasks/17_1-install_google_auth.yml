@@ -37,7 +37,7 @@
     - name: Copy Google Authenticator Script templates
       ansible.builtin.template:
         src: "{{ item }}.j2"
-        dest: "/usr/local/bin/{{ item }}"
+        dest: "{{ user_local_bin_path }}/{{ item }}"
         owner: root
         group: root
         mode: '0755'
