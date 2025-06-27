@@ -1,4 +1,4 @@
 # Snapshot main datasets before installing or removing packages
 # We use a DATE variable to ensure all snaps have SAME date
 
-Dpkg::Pre-Invoke { "export DATE=$(/usr/bin/date +%F-%H%M%S) ; zfs snap {{ root_pool_dataset_path }}@apt_${DATE}"; };
+Dpkg::Pre-Invoke { "export DATE=$(/usr/bin/date +%F-%H%M%S) ; {{ zfs_package_binary_path }} snap {{ root_pool_dataset_path }}@apt_${DATE}"; };
