@@ -20,7 +20,7 @@
     # - name: Setup /tmp to use tmpfs
     #   ansible.builtin.copy:
     #     src: "{{ live_cd_mountpoint }}/usr/share/systemd/tmp.mount"
-    #     dest: "{{ live_cd_mountpoint }}/etc/systemd/system/tmp.mount"
+    #     dest: "{{ live_cd_mountpoint }}{{ systemd_service_path }}/tmp.mount"
     #     mode: "0644"
     #     remote_src: true
 
@@ -65,7 +65,7 @@
     - name: Install ZFS Service Templates
       ansible.builtin.template:
         src: "{{ item }}.j2"
-        dest: "{{ live_cd_mountpoint }}/etc/systemd/system/{{ item }}"
+        dest: "{{ live_cd_mountpoint }}{{ systemd_service_path }}/{{ item }}"
         owner: root
         group: root
         mode: '0644'
@@ -117,7 +117,7 @@
     - name: Install ZFS Service Templates for Encryption
       ansible.builtin.template:
         src: "{{ item }}.j2"
-        dest: "{{ live_cd_mountpoint }}/etc/systemd/system/{{ item }}"
+        dest: "{{ live_cd_mountpoint }}{{ systemd_service_path }}/{{ item }}"
         owner: root
         group: root
         mode: "644"
