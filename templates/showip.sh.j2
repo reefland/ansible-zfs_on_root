@@ -6,5 +6,5 @@
 # Exclude lo, virtual and docker interfaces - they're just messy
 
 echo -e "$(lsb_release -d -s) \\\n \l\n" > /etc/issue
-echo "$(ls -1 /sys/class/net | grep -E -v 'lo|vir|docker|tap|veth|br-|zt?' | xargs -I {} echo '   {} : \4{{}}')" >> /etc/issue
+{% raw %}echo "$(ls -1 /sys/class/net | grep -E -v 'lo|vir|docker|tap|veth|br-|zt?' | xargs -I {} echo '   {} : \4{{}}')" >> /etc/issue{% endraw %}
 echo "" >> /etc/issue
