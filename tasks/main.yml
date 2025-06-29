@@ -24,6 +24,7 @@
   loop:
     - 01_test_virtualbox.yml
     - 01_basic_checks.yml
+    - 01_test_secureboot.yml
     - 02_confirm_defaults.yml
     - 03_install_zfs_packages.yml
     - 04_clear_partition_tables.yml
@@ -39,12 +40,14 @@
     - 12_4-install_syslinux.yml
     - 12_5-install_zfsbootmenu.yml
     - 12_6-config_swap.yml
+    - 12_7-config_secureboot.yml
     - 13_system_tweaks.yml
     - 14_first_boot_prep.yml
     - 15_unmount_chroot.yml
     - 16_restart_remote.yml
     - 17_0-create_regular_user.yml
     - 17_1-install_google_auth.yml
+    - 17_2-add_showip_service.yml
     - 17_5-copy_keys_notice.yml
     - 18_0-enable_dropbear.yml
     - 19_final_setup.yml

@@ -1,0 +1,11 @@
+# Watch the zfsbootmenu.efi image for changes
+[Unit]
+Description=ZFSBootmenu kernel changed, rebuild EFI image bundle
+
+[Path]
+PathChanged={{ zfs_boot_menu_path }}/zfsbootmenu.efi
+Unit=zfsbootmenu-sign-efi.service
+
+[Install]
+WantedBy=multi-user.target
+WantedBy=system-update.target

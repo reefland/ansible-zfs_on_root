@@ -1,0 +1,11 @@
+# Watch the zfsbootmenu initramfs for changes
+[Unit]
+Description=ZFSBootmenu initramfs changed, rebuild EFI image bundle
+
+[Path]
+PathChanged={{ zfs_boot_menu_path }}/initramfs-bootmenu.img
+Unit=zfsbootmenu-update@initramfs-bootmenu.service
+
+[Install]
+WantedBy=multi-user.target
+WantedBy=system-update.target

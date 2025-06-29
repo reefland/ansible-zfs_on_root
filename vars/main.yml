@@ -136,8 +136,20 @@ efi_boot_mountpoint: "/boot/efi"
 # Path for EFI directory
 efi_boot_path: "{{ efi_boot_mountpoint }}/EFI"
 
-# Fallback Path for EFI, copy refined_x64.efi to this path/name
-efi_fallback_path: "{{ efi_boot_mountpoint }}/EFI/boot/bootx64.efi"
+# Fallback EFI filename
+efi_fallback_filename: "bootx64.efi"
+
+# Fallback path for EFI boot
+efi_fallback_boot_path: "EFI/boot"
+
+# Fallback Path for EFI, copy refined_x64.efi to
+efi_fallback_path: "{{ efi_boot_mountpoint }}/{{ efi_fallback_boot_path }}"
+
+# Secure Boot APT Repository URL
+secureboot_apt_key_url: "https://download.opensuse.org/repositories/home:jloeser:secureboot/xUbuntu_{{ ansible_distribution_version }}//Release.key"
+
+# Secure Boot APT key destination location
+secureboot_apt_key_dst: "/usr/share/keyrings/secureboot.gpg"
 
 # Path for ZFSBootMenu
 zfs_boot_menu_path: "{{ efi_boot_path }}/zfsbootmenu"
@@ -153,6 +165,12 @@ zfs_boot_menu_version: "v3.0.1"
 
 # ZFSBootMenu Repo URL to Download Source files
 zfs_boot_menu_source_url: "https://get.zfsbootmenu.org/source"
+
+# ZFSBootMenu EFI Recovery Binary URL
+zfs_boot_menu_recovery_url: "https://get.zfsbootmenu.org/efi/recovery"
+
+# ZFSBootMenu Recovery Binary Linux Version
+zfs_boot_menu_recovery_linux: "linux6.12"
 
 # Memtest 86 versions to install
 memtest86_syslinux_version: "4.3.7"
@@ -186,6 +204,12 @@ packages_to_mark_hold:
 efi_firmware_path: "/sys/firmware/efi"
 
 efi_firmware_vars_path: "{{ efi_firmware_path }}/efivars"
+
+# User Local Bin Path
+user_local_bin_path: "/usr/local/bin"
+
+# Systemd path to store service files
+systemd_service_path: "/etc/systemd/system"
 
 # Location of sudoers include file which contains: ansible ALL=(ALL) NOPASSWD:ALL
 sudoers_include_file: "/etc/sudoers.d/99_sudo_include_file"

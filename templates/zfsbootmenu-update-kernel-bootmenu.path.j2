@@ -1,0 +1,11 @@
+# Watch the zfsbootmenu kernel for changes
+[Unit]
+Description=ZFSBootmenu kernel changed, rebuild EFI image bundle
+
+[Path]
+PathChanged={{ zfs_boot_menu_path }}/vmlinuz-bootmenu
+Unit=zfsbootmenu-update@vmlinuz-bootmenu.service
+
+[Install]
+WantedBy=multi-user.target
+WantedBy=system-update.target

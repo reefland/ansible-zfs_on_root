@@ -1,0 +1,11 @@
+# Rebuild the zfsbootmenu.efi image if the kernel or initramfs change
+# We re-sign the kernel and initramfs here because there is another watch
+# service "zfsbootmenu-update-efi-image.path" that handles signing the efi image
+[Unit]
+Description=Update ZFSBootmenu EFI image bundle
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/ukify build --linux={{ zfs_boot_menu_path }}/vmlinuz-bootmenu --initrd=/boot/efi/EFI/zfsbootmenu/initramfs-bootmenu.img --output={{ zfs_boot_menu_path }}/zfsbootmenu.efi --cmdline='quiet rw'
+ExecStart=/usr/sbin/sbctl sign -s {{ zfs_boot_menu_path }}/vmlinuz-bootmenu
+ExecStart=/usr/sbin/sbctl sign -s {{ zfs_boot_menu_path }}/initramfs-bootmenu.img

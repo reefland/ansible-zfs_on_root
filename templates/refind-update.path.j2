@@ -1,0 +1,11 @@
+# Watch rEFInd for changes
+[Unit]
+Description=rEFInd binary changed, re-sign
+
+[Path]
+PathChanged={{ refind_path }}/refind_x64.efi
+Unit=refind-update.service
+
+[Install]
+WantedBy=multi-user.target
+WantedBy=system-update.target

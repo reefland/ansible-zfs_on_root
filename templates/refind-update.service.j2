@@ -1,0 +1,7 @@
+# Re-sign the rEFInd efi binary if required
+[Unit]
+Description=Re-sign rEFInd binary
+
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/sbctl sign -s {{ refind_path }}/refind_x64.efi

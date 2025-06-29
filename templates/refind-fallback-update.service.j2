@@ -1,0 +1,7 @@
+# Re-sign the rEFInd fallback efi binary if required
+[Unit]
+Description=Re-sign rEFInd fallback binary
+
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/sbctl sign -s {{ efi_fallback_path }}

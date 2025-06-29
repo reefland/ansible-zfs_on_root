@@ -1,0 +1,81 @@
+---
+###############################################################################
+# [ UEFI Secure Boot Sanity Checks ]##########################################
+# If UEFI Secure Boot enabled, then UEFI Firmware must be detected.
+
+- name: If UEFI Secure Boot enabled, then UEFI Firmware must be detected
+  when:
+    - efi_secure_boot_enabled|default(false)|bool
+  tags:
+    - test_secureboot
+    - always
+  block:
+    - name: Check if UEFI Firmware is detected for Secure Boot
+      ansible.builtin.assert:
+        that:
+          - efi_firmware_directory.stat.isdir is defined
+        fail_msg: "ERROR: UEFI Secure Boot enabled, but UEFI Firmware not detected. Cannot continue."
+
+    - name: Download SecureBoot APT key
+      ansible.builtin.get_url:
+        url: "{{ secureboot_apt_key_url }}"
+        dest: /tmp/release.key
+        mode: '0644'
+
+    - name: Convert SecureBoot key to GPG format
+      ansible.builtin.command:
+        cmd: "gpg --dearmor -o {{ secureboot_apt_key_dst }} /tmp/release.key"
+      args:
+        creates: "{{ secureboot_apt_key_dst }}"
+
+    - name: Copy secureboot.sources template to LiveCD Environment
+      ansible.builtin.template:
+        src: secureboot.sources.j2
+        dest: "/etc/apt/sources.list.d/secureboot.sources"
+        owner: root
+        group: root
+        mode: '0644'
+      when:
+        - ansible_distribution == 'Ubuntu'
+
+    - name: Install packages for managing UEFI SecureBoot keys
+      ansible.builtin.apt:
+        name:
+          - systemd-boot-efi
+          - sbctl
+          - jq
+        state: present
+        update_cache: true
+        install_recommends: false
+
+    - name: Determine if Secure Boot is in Setup Mode
+      ansible.builtin.shell: |
+        set -o pipefail
+        sbctl status --json | jq '.setup_mode'
+      register: secure_boot_setup_mode_check
+      changed_when: secure_boot_setup_mode_check.rc == 0
+
+    - name: Capture Secure Boot Setup Mode Check Output
+      ansible.builtin.command:
+        cmd: "sbctl status"
+      register: secure_boot_setup_mode_status
+      changed_when: secure_boot_setup_mode_status.rc == 0
+
+    - name: Confirm Secure Boot is in Setup Mode if under VirtualBox
+      when:
+        - virtual_box|default(false)|bool
+      ansible.builtin.assert:
+        that:
+          - secure_boot_setup_mode_check.stdout == "true"
+        fail_msg: "ERROR: UEFI Secure Boot is not in Setup Mode.\n
+          For VirtualBox delete the .nvram file or set variable `efi_secure_boot_enabled` to false to disable.\n\n
+          Status:\n{{ secure_boot_setup_mode_status.stdout }}"
+
+    - name: Confirm Secure Boot is in Setup Mode
+      ansible.builtin.assert:
+        that:
+          - secure_boot_setup_mode_check.stdout == "true"
+        fail_msg: "ERROR: UEFI Secure Boot is not in Setup Mode.\n
+          Please set it to Setup Mode in the BIOS/UEFI settings,\n
+          or set variable `efi_secure_boot_enabled` to false to disable.\n\n
+          Status:\n{{ secure_boot_setup_mode_status.stdout }}"

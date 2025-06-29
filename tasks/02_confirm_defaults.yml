@@ -38,6 +38,8 @@
       {% endif %}
 
               Use UEFI Booting: {{ use_uefi_booting_msg | default('') }}
+          Use UEFI Secure Boot: {{ efi_secure_boot_enabled | default(false) | bool }}
+      {% if efi_secure_boot_enabled | default(false) | bool %}UEFI Setup Mode Detected: {{ secure_boot_setup_mode_check.stdout | default('') }}{% endif %}
 
                   Local Prefix: {{ locale_prefix }}
                      Time Zone: {{ timezone_value }}

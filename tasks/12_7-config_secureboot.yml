@@ -1,0 +1,147 @@
+---
+# [ Configure Secure Boot for ZFS on Root ] ######################################
+- name: Configure Secure Boot for ZFS on Root
+  when:
+    - ansible_nodename != "localhost"
+    - efi_secure_boot_enabled | default(false) | bool
+  tags:
+    - config_secureboot
+  block:
+    # Install Secure Boot packages and configure keys into the chroot environment
+    - name: Copy SecureBoot Repo Files to chroot environment
+      ansible.builtin.copy:
+        src: "{{ item }}"
+        dest: "{{ live_cd_mountpoint }}/{{ item }}"
+        owner: root
+        group: root
+        mode: '0644'
+        remote_src: true
+      loop:
+        - "{{ secureboot_apt_key_dst }}"
+        - "/etc/apt/sources.list.d/secureboot.sources"
+
+    - name: Run chroot command to install Secure Boot packages
+      ansible.builtin.command:
+        cmd: "{{ chroot_cmd }} bash -c '{{ item }}'"
+      register: cmd_output
+      changed_when: cmd_output.rc == 0
+      with_items:
+        - "DEBIAN_FRONTEND=noninteractive apt-get -qq update"
+        - "DEBIAN_FRONTEND=noninteractive apt-get --yes --no-install-recommends install systemd-boot-efi"
+        - "DEBIAN_FRONTEND=noninteractive apt-get --yes --no-install-recommends install sbctl systemd-ukify"
+      when:
+        - ansible_os_family == "Debian"
+
+    - name: Run chroot command to Create EFI Image for ZFSBootMenu if using Kernel Files
+      ansible.builtin.command:
+        cmd: "{{ chroot_cmd }} bash -c '{{ item }}'"
+      register: cmd_output
+      changed_when: cmd_output.rc == 0
+      with_items:
+        - "/usr/bin/ukify build --linux={{ zfs_boot_menu_path }}/vmlinuz-bootmenu
+          --initrd={{ zfs_boot_menu_path }}/initramfs-bootmenu.img --output={{ zfs_boot_menu_path }}/zfsbootmenu.efi
+          --cmdline='quiet rw'"
+      when:
+        - not efi_firmware_directory.stat.isdir is defined
+
+    - name: Run chroot command to Initialize sbctl and sign all the things
+      ansible.builtin.command:
+        cmd: "{{ chroot_cmd }} bash -c '{{ item }}'"
+      register: cmd_output
+      changed_when: cmd_output.rc == 0
+      with_items:
+        - "/usr/sbin/sbctl create-keys"
+        - "/usr/sbin/sbctl enroll-keys --microsoft"
+        - "/usr/sbin/sbctl sign -s {{ efi_boot_path }}/tools/memtest86/memtest86.efi"
+        - "/usr/sbin/sbctl sign -s {{ efi_boot_path }}/tools/shellx64.efi"
+        - "/usr/sbin/sbctl sign -s {{ zfs_boot_menu_path }}/zfsbootmenu.efi"
+
+    - name: Run chroot command to sign refined_x64.efi (no fallback)
+      ansible.builtin.command:
+        cmd: "{{ chroot_cmd }} bash -c '{{ item }}'"
+      register: cmd_output
+      changed_when: cmd_output.rc == 0
+      with_items:
+        - "/usr/sbin/sbctl sign -s {{ refind_path }}/refind_x64.efi"
+      when:
+        - not efi_fallback_enabled | default(false) | bool
+
+    - name: Run chroot command to sign refined_x64.efi (fallback location)
+      ansible.builtin.command:
+        cmd: "{{ chroot_cmd }} bash -c '{{ item }}'"
+      register: cmd_output
+      changed_when: cmd_output.rc == 0
+      with_items:
+        - "/usr/sbin/sbctl sign -s {{ efi_fallback_path }}/bootx64.efi"
+      when:
+        - efi_fallback_enabled | default(false) | bool
+
+    - name: Run chroot command to Sign ZFSBootMenu Kernel Files
+      ansible.builtin.command:
+        cmd: "{{ chroot_cmd }} bash -c '{{ item }}'"
+      register: cmd_output
+      changed_when: cmd_output.rc == 0
+      with_items:
+        - "/usr/sbin/sbctl sign -s {{ zfs_boot_menu_path }}/vmlinuz-bootmenu"
+        - "/usr/sbin/sbctl sign -s {{ zfs_boot_menu_path }}/initramfs-bootmenu.img"
+      when:
+        - not efi_firmware_directory.stat.isdir is defined
+
+    - name: Copy Secure Boot Signing templates to chroot environment
+      ansible.builtin.template:
+        src: "{{ item }}.j2"
+        dest: "{{ live_cd_mountpoint }}{{ systemd_service_path }}/{{ item }}"
+        owner: root
+        group: root
+        mode: '0644'
+      with_items:
+        - "zfsbootmenu-sign-efi.service"
+        - "zfsbootmenu-update-efi-image.path"
+        - "zfsbootmenu-update@.service"
+        - "zfsbootmenu-update-kernel-bootmenu.path"
+        - "zfsbootmenu-update-initramfs-bootmenu.path"
+        - "refind-update.service"
+        - "refind-update.path"
+      loop_control:
+        label: "{{ item }}.j2"
+
+    - name: Copy Secure Boot Signing templates for rEFInd fallback to chroot environment
+      ansible.builtin.template:
+        src: "{{ item }}.j2"
+        dest: "{{ live_cd_mountpoint }}{{ systemd_service_path }}/{{ item }}"
+        owner: root
+        group: root
+        mode: '0644'
+      with_items:
+        - "refind-fallback-update.service"
+        - "refind-fallback-update.path"
+      loop_control:
+        label: "{{ item }}.j2"
+      when:
+        - efi_fallback_enabled | default(false) | bool
+
+    - name: Run chroot commands to enable Secure Boot Signing services
+      ansible.builtin.command:
+        cmd: "{{ chroot_cmd }} bash -c 'systemctl enable {{ item }}'"
+      register: cmd_output
+      changed_when: cmd_output.rc == 0
+      with_items:
+        - "zfsbootmenu-update-efi-image.path"
+        - "zfsbootmenu-update-kernel-bootmenu.path"
+        - "zfsbootmenu-update-initramfs-bootmenu.path"
+        - "refind-update.path"
+      loop_control:
+        label: "{{ item }}"
+
+    - name: Run chroot commands to enable Secure Boot Signing services for rEFInd fallback
+      ansible.builtin.command:
+        cmd: "{{ chroot_cmd }} bash -c 'systemctl enable {{ item }}'"
+      register: cmd_output
+      changed_when: cmd_output.rc == 0
+      with_items:
+        - "refind-fallback-update.service"
+        - "refind-fallback-update.path"
+      loop_control:
+        label: "{{ item }}"
+      when:
+        - efi_fallback_enabled | default(false) | bool

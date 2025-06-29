@@ -57,10 +57,10 @@ refind_boot_menu_timeout: "10"
 # Enables background image for refind / syslinux
 refind_boot_menu_logo: true
 
-## Needs to be a JPG or PNG file.
+# Needs to be a JPG or PNG file.
 refind_boot_menu_logo_filename: "ubuntu-style.png"
 
-## Needs to be a JPG or PNG file at 640x48 for syslinux.
+# Needs to be a JPG or PNG file at 640x48 for syslinux.
 syslinux_boot_menu_logo_filename: "ubuntu-style-sm.png"
 
 # Use ZFSBootMenu KERNEL binary or Build From Source.  The KERNEL binary does
@@ -74,6 +74,21 @@ zfs_boot_menu_compile: "{{ enable_dropbear_support }}"
 # coded to only look for bootx64.efi file name. When set to true a copy
 # of refined_x64.efi will be copied to bootx64.efi
 efi_fallback_enabled: false
+
+# Take a ZFS snapshot of the base system install named "@base_install". This would be
+# a "pristine" snapshot of the system after the initial install and configuration
+# of the system.  This is useful for restoring the system to a known good state.
+# This is performed as the last task in the "final_setup" task.
+take_base_install_snapshot: false
+
+# UEFI Secure Boot Support - For SecureBoot to be enabled and configured, the
+# system must first be put into Setup Mode. This will vary by system, but generally
+# it means that any existing keys must be deleted in the bios config for UEFI SecureBoot.
+# "sbctl" is used to manage and configure the UEFI SecureBoot keys.  When enabled, the
+# process is as follows: 1) create-keys will generate the local set of keys,
+# 2) enroll-keys will enroll the new keys and the default Microsoft keys into the UEFI
+# SecureBoot efi vars, 3) sign refind_x64.efi and zfsbootmenu.efi.
+efi_secure_boot_enabled: false
 
 # For Full GUI Desktop installation (set to false) or command-line only server
 # environment (set to true)

@@ -1,0 +1,11 @@
+# Watch rEFInd fallback for changes
+[Unit]
+Description=rEFInd fallback binary changed, re-sign
+
+[Path]
+PathChanged={{ efi_fallback_path}}
+Unit=refind-fallback-update.service
+
+[Install]
+WantedBy=multi-user.target
+WantedBy=system-update.target

@@ -1,0 +1,8 @@
+# Setup systemd path watch to update zfsbootmenu efi when zfsbootmenu is updateded
+# This way when you update ZBM, it will automagically update and sign the EFI image
+[Unit]
+Description=Sign ZFSBootmenu EFI image bundle
+
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/sbctl sign -s {{ zfs_boot_menu_path }}/zfsbootmenu.efi
