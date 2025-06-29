@@ -115,7 +115,7 @@
       ansible.builtin.shell:
         cmd: >
           echo UUID=$(blkid -s UUID -o value "{{ boot_dev_name }}")
-          /boot/efi vfat nofail,x-systemd.device-timeout=1,x-systemd.after=zfs-mount.service 0 1
+          /boot/efi vfat defaults,x-systemd.after=zfs-mount.service 0 0
           >>"{{ live_cd_mountpoint }}/etc/fstab"
       register: cmd_output
       changed_when: cmd_output.rc == 0
