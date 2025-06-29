@@ -64,26 +64,28 @@
       loop:
         "{{ disk_by_id }}"
 
-    - name: Unmount any mdadm disks that might have been automounted and Stop all found mdadm arrays
-      ansible.builtin.shell: >
-        find /dev -iname md* -type b -exec bash -c
-        "umount {} > /dev/null 2>&1 ;
-        mdadm --stop --force {} > /dev/null 2>&1 ;
-        mdadm --remove {} > /dev/null 2>&1" \;
-      register: cmd_output
-      changed_when:
-        cmd_output.rc == 0
-      ignore_errors: true
+    # This would remove the mdadm used for EFI booting.  Commented out for now.
+    # Assume that swap partitions are already clean and ready to use.
+    # - name: Unmount any mdadm disks that might have been automounted and Stop all found mdadm arrays
+    #   ansible.builtin.shell: >
+    #     find /dev -iname md* -type b -exec bash -c
+    #     "umount {} > /dev/null 2>&1 ;
+    #     mdadm --stop --force {} > /dev/null 2>&1 ;
+    #     mdadm --remove {} > /dev/null 2>&1" \;
+    #   register: cmd_output
+    #   changed_when:
+    #     cmd_output.rc == 0
+    #   ignore_errors: true
 
-    - name: Wipe mdadm superblock from swap partitions
-      ansible.builtin.command:
-        cmd: mdadm --zero-superblock --force {{ item }}-part{{ swap_partition }}
-      register: cmd_output
-      changed_when:
-        cmd_output.rc == 0
-      ignore_errors: true
-      loop:
-        "{{ disk_by_id }}"
+    # - name: Wipe mdadm superblock from swap partitions
+    #   ansible.builtin.command:
+    #     cmd: mdadm --zero-superblock --force {{ item }}-part{{ swap_partition }}
+    #   register: cmd_output
+    #   changed_when:
+    #     cmd_output.rc == 0
+    #   ignore_errors: true
+    #   loop:
+    #     "{{ disk_by_id }}"
 
     # The "-R" - is needed to suppress the "Continue creating array?" prompt
     - name: Run command to create mdadm device for multi-disk swap
