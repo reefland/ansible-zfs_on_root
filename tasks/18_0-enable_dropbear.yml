@@ -202,13 +202,13 @@
       register: cmd_output
       changed_when: cmd_output.rc == 0
 
-    - name: Run Generate ZFSBootMenu
-      ansible.builtin.command:
-        cmd: "generate-zbm --debug"
-      register: cmd_output
-      changed_when: cmd_output.rc == 0
-      when:
-        - zfs_boot_menu_compile | default(false) | bool
+    # - name: Run Generate ZFSBootMenu
+    #   ansible.builtin.command:
+    #     cmd: "generate-zbm --debug"
+    #   register: cmd_output
+    #   changed_when: cmd_output.rc == 0
+    #   when:
+    #     - zfs_boot_menu_compile | default(false) | bool
 
     - name: Update Syslinux when not using EFI
       ansible.builtin.command:

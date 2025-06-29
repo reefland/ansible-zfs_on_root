@@ -174,15 +174,15 @@
       with_items:
         - "dracut -f --regenerate-all"
 
-    - name: Run chroot command to Generate ZFSBootMenu
-      ansible.builtin.command:
-        cmd: "{{ chroot_cmd }} bash -c '{{ item }}'"
-      register: cmd_output
-      changed_when: cmd_output.rc == 0
-      with_items:
-        - "generate-zbm --debug"
-      when:
-        - zfs_boot_menu_compile | default(false) | bool
+    # - name: Run chroot command to Generate ZFSBootMenu
+    #   ansible.builtin.command:
+    #     cmd: "{{ chroot_cmd }} bash -c '{{ item }}'"
+    #   register: cmd_output
+    #   changed_when: cmd_output.rc == 0
+    #   with_items:
+    #     - "generate-zbm --debug"
+    #   when:
+    #     - zfs_boot_menu_compile | default(false) | bool
 
     - name: Run chroot commands to update Syslinux when not using EFI
       ansible.builtin.command:
