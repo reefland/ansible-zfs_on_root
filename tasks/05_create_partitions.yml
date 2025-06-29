@@ -39,9 +39,13 @@
 
     - name: Wait for kernel notification of changes to be processed
       ansible.builtin.command:
-        cmd: "udevadm settle"
+        cmd: "{{ item }}"
       register: cmd_output
       changed_when: cmd_output.rc == 0
+      with_items:
+        - "udevadm settle"
+        - "sleep 1"
+        - "partprobe"
 
     - name: Pause for 5 seconds to settle
       ansible.builtin.pause:
