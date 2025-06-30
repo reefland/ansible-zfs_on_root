@@ -66,6 +66,35 @@ When enabled a copy of `refind_x64.efi` will be copied to `bootx64.efi` location
 efi_fallback_enabled: false
 ```
 
+## Take ZFS Base Install Snapshot
+
+Take a ZFS snapshot of the base system install named "@base_install". This would be a "pristine" snapshot of the system after the initial install and configuration of the system.  This is useful for restoring the system to a known good state.
+
+* This is performed as the last task in the "final_setup" task.
+
+```yaml
+take_base_install_snapshot: false
+```
+
+## UEFI Secure Boot Support
+
+When enabled packages for signing rEFInd and ZFSbootMenu will be installed and the packages will be signed to support Secure Boot.  You will not have to manually enroll EFI images / keys into your UEFI BIOS.
+
+For this to work, you must put your computer into UEFI Setup Mode which is enabled within your UEFI Secure Boot screen.  You would typically delete any existing keys and enable setup mode within the UEFI and then boot the Ubuntu LiveCD image to start the ZFS on Root process.
+
+When enabled, the following process happens:
+
+  1. `create-keys` will generate the local set of keys.
+  2. `enroll-keys` will enroll the new keys and the default Microsoft keys into the UEFI SecureBoot EFI variables
+  3. Sign `refind_x64.efi` and `zfsbootmenu.efi` and if EFI Fallback is enaBLED enabled `bootx64.efi`.
+  4. Watcher services are install to resign files if they are updated in the future.
+
+```yaml
+efi_secure_boot_enabled: false
+```
+
+For more information see [Secure Boot Support Notes](secure_boot_support_notes.md).
+
 ## CLI or Full Desktop
 
 Select if full graphical desktop or command-line server only.
