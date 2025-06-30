@@ -4,11 +4,25 @@
 
 ## Limited UEFI Lookup Table
 
-On [Minisform U560](https://store.minisforum.com/products/um560) after the 1st reboot it went directly into AMI BIOS screen.  It acted as if there were no bootable devices within the system.  Pressing `F7` for boot menu found no devices.  This is NOT typical of a UEFI system.
+On many Minisforum (and other small brand computers) after the 1st reboot it went directly into AMI UEFI/BIOS screen.  It acted as if there were no bootable devices within the system. This is NOT typical of a UEFI system.
 
-* Some UEFI BIOS are hardcoded to look for specific files on the ESP partition mounted as `/etc/boot/efi/EFI` directory. Minisform U560 was looking for `EFI/boot/bootx64.efi` which is not used by rEFInd boot manager.
+* Some UEFI BIOS are hardcoded to look for specific files on the ESP partition mounted as `/etc/boot/efi/EFI` directory. Minisform was looking for `EFI/boot/bootx64.efi` which is not used by rEFInd boot manager.
 * The `sudo efibootmgr -v` from within the Ubuntu Live CD can be used to view the current UEFI lookup table.
 * rEFInd boot manager will generate a `EFI/refind/refind_x64.efi` image.
+
+---
+
+### Two Possible Solutions
+
+#### 1) Enable EFI Fallback
+
+EFI Fallback will take care of all the steps to move rEFInd boot manager image from `EFI/refind/refind_x64.efi` to `EFI/boot/bootx64.efi` and the configuration so that the graphical experience will work as expected.  To enable EFI FallBack, edit `default/main.yml` variable (or define the variable in ansible inventory file, etc.):
+
+```yaml
+efi_fallback_enabled: true
+```
+
+#### 2) Manually add EFI Variables
 
 I needed to add a reference to the `refind_x64.efi` image FOR EACH bootable device in the system - a SATA SSD (`sda`) and NVMe SSD (`nvme0n1`).  Before the 1st reboot of the target system, while still within the Ubuntu Live CD environment, I used the following:
 
@@ -23,7 +37,7 @@ efibootmgr --create --gpt --disk /dev/nvme0n1 --part 1 -w --loader "\\EFI\\refin
 NOTE: This is specific to the existing partition disk partitions.  Each time I deleted partitions and created them again I had to delete these references and recreate them.
 
 ```shell
-$ sudo efibootmgr -v
+$ sudo efibootmgr
 
 BootCurrent: 0001
 Timeout: 2 seconds
