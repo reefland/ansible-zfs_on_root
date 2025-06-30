@@ -12,8 +12,11 @@ Originally based on the [OpenZFS ZFS on Root](https://openzfs.github.io/openzfs-
   * rEFInd provides graphical boot loader menu and roll-back to previous kernels on UEFI systems
   * Syslinux provides boot loader menu for Legacy BIOS systems
   * ZFSbootMenu provides menu driven roll-back to previous ZFS snapshots
+  * Memtest86+ included as a boot option
   * Automatic snapshot creation upon apt/dpkg install or remove
 * No GRUB Boot Loader!
+  * `initramfs-tools` is NOT used, this package is disabled via `apt-mark hold`.
+  * Instead [dracut](https://wiki.archlinux.org/title/Dracut) is used for managing the initramfs
 * All ESP (boot) partitions are `mdadm` mirror across all devices
 * No separation of `bpool` and `rpool` just a single `rpool` is needed
 * Predefine rules for ZFS `rpool` pools types (mirror, raidz1, raidz2, multiple mirror vdevs) based on number of devices available
@@ -22,6 +25,8 @@ Originally based on the [OpenZFS ZFS on Root](https://openzfs.github.io/openzfs-
   * If encryption is enabled, LUKS is used to encrypt Swap partitions
 * Native ZFS Encryption Support
 * UEFI and Legacy Booting supported (can even switch between them)
+* Secure Boot key signing for enrolled images of rEFInd and ZFSbootMenu.
+  * [sbctl](https://github.com/Foxboron/sbctl) is used to manage setup and configuration of signing keys.
 * Support for [Ubuntu Hardware Enablement](https://ubuntu.com/kernel/lifecycle) (newer kernel and hardware support)
 * Multiple non-root user account creation (each user gets own ZFS dataset)
 * Customized SSH Configuration Options
@@ -301,6 +306,7 @@ fatal: [host.example.com]: FAILED! => changed=false
 
 ### Additional Settings to Review
 
+* Review [Secure Boot Support Settings](docs/secure_boot_support_notes.md)
 * Review [Google Authenticator Settings](docs/google-authenticator.md)
 * Review [Computer Configuration Settings](docs/computer-config-settings.md)
 * Review [SWAP Partition Settings](docs/swap-partition-settings.md)
@@ -441,16 +447,18 @@ This is the list and order of execution for all tags defined for this playbook:
       - install_refind
       - install_syslinux
       - install_zfsbootmenu
-      - config_swap [not tested]
+      - config_swap
+      - config_secureboot
       - system_tweaks
       - first_boot_prep
       - unmount_chroot
       - reboot_remote
       - create_regular_users
       - install_google_auth
+      - add_showip_service
       - copy_ssh_keys_notice
       - install_dropbear
-      - final_setup
+      - final_setup [update_sshd_settings, install_msmtp, disable_ipv6, update_2_desktop]
       - restart_remote_final
 ```
 
@@ -513,3 +521,9 @@ NOTE: `mdadm` is used to create mirrored or striped swap partitions.  If you wil
 
 * [Detailed mdam steps to review](docs/mark_swap_device_as_failed.md) to mark as failed.
 * Includes steps on rebuilding all partitions and replacing a completely failed drive.
+
+---
+
+#### Acknowledgements
+
+* Much of this ZFS on Root work is done in collaboration with and is an Ansible automation based on a subset of the work from <https://github.com/Halfwalker/ZFS-root>.
