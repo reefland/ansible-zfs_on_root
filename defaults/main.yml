@@ -129,6 +129,7 @@ additional_install_packages:
   - needrestart
   - unattended-upgrades
   - lz4
+  - usbutils
 
 # Enable and Define SMTP Email Alerts for System
 # msmtp is a simple and easy to use SMTP client
