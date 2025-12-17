@@ -146,7 +146,10 @@ efi_fallback_boot_path: "EFI/boot"
 efi_fallback_path: "{{ efi_boot_mountpoint }}/{{ efi_fallback_boot_path }}"
 
 # Secure Boot APT Repository URL
-secureboot_apt_key_url: "https://download.opensuse.org/repositories/home:jloeser:secureboot/xUbuntu_{{ ansible_distribution_version }}//Release.key"
+secureboot_apt_url: "http://download.opensuse.org/repositories/home:/jloeser:/secureboot/xUbuntu_{{ ansible_distribution_version }}"
+
+# Secure Boot APT Key URL
+secureboot_apt_key_url: "{{ secureboot_apt_url }}//Release.key"
 
 # Secure Boot APT key destination location
 secureboot_apt_key_dst: "/usr/share/keyrings/secureboot.gpg"
