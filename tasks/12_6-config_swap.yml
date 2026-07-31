@@ -53,7 +53,7 @@
     # If more than 2 devices make a RAID device
     - name: See if raid should be used
       ansible.builtin.set_fact:
-        mdadm_type: "raid5"
+        mdadm_type: "raid10"
       when:
         - disk_by_id | length | int > 2
 
