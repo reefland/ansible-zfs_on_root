@@ -4,9 +4,10 @@ network:
   ethernets:
     {{nic_name.stdout}}:
       dhcp4: true
+      dhcp-identifier: mac
       # dhcp6: true
       wakeonlan: true
       # set-name: {{nic_name.stdout}}
-      # match:
-      #   macaddress: {{ nic_mac_address.stdout }}
+      match:
+        macaddress: {{ nic_mac_address.stdout }}
       #   name: e*
