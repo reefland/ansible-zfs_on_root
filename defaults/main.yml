@@ -270,8 +270,9 @@ apply_sshd_settings:
 enable_dropbear_support: true
 apply_dropbear_settings:
   # Automatic (dhcp) or static IP assignment for zfsbootmenu remote access
-  # "dhcp", "dhcp,dhcp6", "dhcp6", or "static"
-  remoteaccess_ip_config: "dhcp"
+  # "dhcp::<MAC>" defines which interface to use by its MAC address.
+  # "dhcp", "dhcp::<MAC>","dhcp,dhcp6", "dhcp6", or "static"
+  remoteaccess_ip_config: "dhcp::{{ nic_mac_address.stdout }}"
   # Remote access static IP address to connect to ZFSBootMenu
   # Only used with "static", not used for dhcp or dhcp6 automatic IP configuration
   remoteaccess_ip: "192.168.0.222"
