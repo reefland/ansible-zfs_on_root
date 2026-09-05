@@ -56,6 +56,14 @@
         group: root
         mode: '0600'
 
+    - name: Copy RX ring buffer tweak to /etc/systemd/network/
+      ansible.builtin.template:
+        src: 10-rxring.link.j2
+        dest: "{{ live_cd_mountpoint }}/etc/systemd/network/10-{{ nic_name.stdout }}-rxring.link"
+        owner: root
+        group: root
+        mode: '0644'
+
     - name: Debug Show Distro Release
       ansible.builtin.debug:
         msg: "{{ ansible_distribution_release }}"
